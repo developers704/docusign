@@ -1,0 +1,37 @@
+# Copy these into cPanel > Setup Node.js App > Environment variables
+# Replace placeholder values before saving.
+
+APP_URL=https://docusign.vallianiuniversity.com
+NODE_ENV=production
+
+ADMIN_NAME=Valliani Network Administrator
+ADMIN_EMAIL=admin@vallianiuniversity.com
+ADMIN_PASSWORD=Valliani@2026!
+SESSION_SECRET=CHANGE-THIS-LONG-RANDOM-SECRET
+OTP_SECRET=CHANGE-THIS-ANOTHER-LONG-RANDOM-SECRET
+REQUIRE_EMAIL_OTP=false
+
+# MySQL (created in cPanel MySQL Databases)
+DATABASE_HOST=localhost
+DATABASE_PORT=3306
+DATABASE_NAME=vallian1_valliani_esign
+DATABASE_USER=vallian1_valliani_esign
+DATABASE_PASSWORD=YOUR-DB-PASSWORD-HERE
+
+# Optional fallback — prefer Settings > Email / SMTP in the app
+# Option A: custom / cPanel mailbox
+SMTP_HOST=mail.docusign.vallianiuniversity.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=shafquat@docusign.vallianiuniversity.com
+SMTP_PASS=SET-IN-CPANEL-ONLY
+EMAIL_FROM=Valliani Agreements <shafquat@docusign.vallianiuniversity.com>
+
+# Option B: Gmail SMTP (use App Password, not normal Gmail password)
+# Or set this from Settings > Email / SMTP > Gmail SMTP (recommended)
+# SMTP_HOST=smtp.gmail.com
+# SMTP_PORT=465
+# SMTP_SECURE=true
+# SMTP_USER=you@gmail.com
+# SMTP_PASS=your-16-char-app-password
+# EMAIL_FROM=Valliani Agreements <you@gmail.com>

@@ -1,0 +1,18 @@
+[
+  {
+    "id": "e3da03a9-0440-4bdb-a167-d4d07570d7de",
+    "officeId": "2e4758de-782f-44e7-8e08-ff4878afcb9d",
+    "name": "document",
+    "kind": "my",
+    "createdAt": "2026-07-24T10:30:04.141Z",
+    "updatedAt": "2026-07-24T10:30:04.141Z"
+  },
+  {
+    "id": "5110db40-8add-4186-8277-c281104556d8",
+    "officeId": "2e4758de-782f-44e7-8e08-ff4878afcb9d",
+    "name": "new",
+    "kind": "my",
+    "createdAt": "2026-07-24T11:25:03.189Z",
+    "updatedAt": "2026-07-24T11:25:03.189Z"
+  }
+]

@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  /* Thank-you / secure e-sign theme */
+  --brand: #4c00ff;
+  --brand-hover: #3d00cf;
+  --brand-dark: #21004c;
+  --brand-bright: #861cff;
+  --brand-soft: #f0ebff;
+  --ink: #1c1230;
+  --muted: #958a9f;
+  --line: #e7e2ec;
+  --canvas: #f6f3f9;
+  --success-bg: #e8f5e9;
+  --success-ink: #1b5e20;
+}
+
+* { box-sizing: border-box; }
+html {
+  background: var(--canvas);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+body {
+  margin: 0;
+  background: #fff;
+  color: var(--ink);
+  font-family: var(--font-app), "Source Sans 3", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+button, input, textarea, select { font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+::selection { background: #d8ccff; color: #21004c; }
+
+.app-shadow { box-shadow: 0 10px 32px rgba(40, 18, 72, .08); }
+.soft-shadow { box-shadow: 0 4px 16px rgba(40, 18, 72, .06); }
+.brand-gradient { background: linear-gradient(135deg, #21004c 0%, #4c00ff 55%, #861cff 100%); }
+.brand-grid {
+  background-image:
+    radial-gradient(circle at 16% 22%, rgba(255,255,255,.16) 0 1px, transparent 2px),
+    linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+  background-size: 32px 32px, 52px 52px, 52px 52px;
+}
+.page-canvas {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(76,0,255,0.10), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(134,28,255,0.06), transparent 50%),
+    var(--canvas);
+}
+
+.btn-brand {
+  background: var(--brand);
+  color: #fff;
+  border-radius: 10px;
+  font-weight: 700;
+}
+.btn-brand:hover { background: var(--brand-hover); }
+
+.scrollbar-thin { scrollbar-width: thin; scrollbar-color: #c7bdd8 transparent; }
+.scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: #c7bdd8; border-radius: 99px; }
+
+@media (max-width: 1023px) {
+  .scrollbar-thin::-webkit-scrollbar { width: 4px; height: 4px; }
+}
+
+@media (max-width: 640px) {
+  body { font-size: 15px; }
+  button, [role="button"], a.btn {
+    min-height: 44px;
+  }
+}

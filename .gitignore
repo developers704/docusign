@@ -1,0 +1,11 @@
+node_modules/
+.next/
+tmp/
+backups/
+stderr.log
+tsconfig.tsbuildinfo
+.env
+.env.local
+.env*.local
+data/smtp-settings.json
+

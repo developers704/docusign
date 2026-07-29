@@ -1,0 +1,26 @@
+[
+  {
+    "id": "2e4758de-782f-44e7-8e08-ff4878afcb9d",
+    "name": "arrakconsulting",
+    "slug": "arrakconsulting",
+    "email": "admin@vallianiuniversity.com",
+    "phone": "123456",
+    "address": "karachi",
+    "brandColor": "#0f172a",
+    "isActive": true,
+    "createdAt": "2026-07-20T10:58:10.749Z",
+    "updatedAt": "2026-07-20T11:01:40.371Z"
+  },
+  {
+    "id": "3faffcb3-614b-4d18-ae94-768b864c533b",
+    "name": "Valliani",
+    "slug": "valliani",
+    "email": "hr@valliani.app",
+    "phone": "123456",
+    "address": "usa",
+    "brandColor": "#21004c",
+    "isActive": true,
+    "createdAt": "2026-07-28T05:52:50.610Z",
+    "updatedAt": "2026-07-28T05:52:50.610Z"
+  }
+]

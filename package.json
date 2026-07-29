@@ -1,0 +1,41 @@
+{
+  "name": "valliani-agreements-cloud",
+  "version": "3.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --hostname 0.0.0.0 --port 3000",
+    "dev:local": "next dev --hostname 127.0.0.1 --port 3000",
+    "build": "next build",
+    "start": "node server.js",
+    "prepare-cpanel": "powershell -ExecutionPolicy Bypass -File ./scripts/prepare-cpanel-deploy.ps1",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test \"tests/**/*.test.ts\"",
+    "migrate:mysql": "tsx scripts/migrate-json-to-mysql.ts",
+    "next-start": "next start"
+  },
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "dependencies": {
+    "mammoth": "^1.12.0",
+    "mysql2": "^3.23.1",
+    "next": "16.2.10",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^4.10.38",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-signature-canvas": "^1.1.0-alpha.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.10",
+    "tailwindcss": "^4",
+    "tsx": "^4.20.5",
+    "typescript": "^5"
+  }
+}

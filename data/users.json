@@ -1,0 +1,28 @@
+[
+  {
+    "id": "5b2cfb55-057f-45c0-a910-20d7e3a0ecfb",
+    "officeId": "2e4758de-782f-44e7-8e08-ff4878afcb9d",
+    "name": "umair",
+    "email": "umair@gmail.com",
+    "role": "office_admin",
+    "passwordSalt": "d6dca3438535c304310d2ad9399a9886",
+    "passwordHash": "e16e9be1834da5ad53d7676edbee710ff895a5c3efce2527c404cd96d862e757ebee5343dfcb2db160c633c2505331b92030635c046d2f42df6bf9428513eb5a",
+    "isActive": true,
+    "createdAt": "2026-07-20T10:58:10.749Z",
+    "updatedAt": "2026-07-28T05:23:53.278Z",
+    "lastLoginAt": "2026-07-28T05:23:53.278Z"
+  },
+  {
+    "id": "b0060a29-faae-4a19-bb50-1df8c8439427",
+    "officeId": "3faffcb3-614b-4d18-ae94-768b864c533b",
+    "name": "valliani",
+    "email": "hr@valliani.app",
+    "role": "office_admin",
+    "passwordSalt": "f0a81ed36da7bef46450b471c4e5d72c",
+    "passwordHash": "cc76052c2b499fba98888b5cc8a48152a6fd6decb4fbeabbb2452991d270f9796767793e2d6590723b8fff763a010768cc8486d24ce5099c129474590fbcd560",
+    "isActive": true,
+    "createdAt": "2026-07-28T05:52:50.610Z",
+    "updatedAt": "2026-07-29T17:31:30.186Z",
+    "lastLoginAt": "2026-07-29T17:31:30.186Z"
+  }
+]
