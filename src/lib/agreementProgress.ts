@@ -54,17 +54,8 @@ export function agreementSigningProgress(envelope: EnvelopeRecord) {
   const current = signers.find((recipient) => WAITING.has(recipient.status));
   const waitingRecipients = signers.filter((recipient) => recipientState(recipient.status) === "waiting");
 
-  const slot = 100 / total;
-  let percent = completed * slot;
-
-  if (current) {
-    const step = current.status === "sent" ? 0.25 : current.status === "viewed" ? 0.5 : 0.75;
-    percent += slot * step;
-  } else if (completed === 0 && ["sent", "scheduled"].includes(envelope.status)) {
-    percent = 25;
-  }
-
-  percent = Math.min(99, Math.max(0, Math.round(percent)));
+  // Progress tracks completed signatures only (e.g. 0/2 → 0%, 1/2 → 50%, 2/2 → 100%).
+  const percent = Math.round((completed / total) * 100);
 
   const waitingForName = current?.name || null;
   let stageLabel = envelope.status.replaceAll("_", " ");

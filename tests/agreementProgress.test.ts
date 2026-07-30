@@ -37,19 +37,19 @@ test("agreementSigningProgress maps sent, review, waiting, and completed", () =>
   const oneSent = agreementSigningProgress(
     envelope("sent", [recipient({ id: "a", name: "Ali", status: "sent", order: 1 })])
   );
-  assert.equal(oneSent.percent, 25);
+  assert.equal(oneSent.percent, 0);
   assert.equal(oneSent.summaryLabel, "Waiting for Ali");
   assert.equal(oneSent.canCorrect, true);
 
   const oneViewed = agreementSigningProgress(
     envelope("viewed", [recipient({ id: "a", name: "Ali", status: "viewed", order: 1 })])
   );
-  assert.equal(oneViewed.percent, 50);
+  assert.equal(oneViewed.percent, 0);
 
   const oneActive = agreementSigningProgress(
     envelope("sent", [recipient({ id: "a", name: "Ali", status: "active", order: 1 })])
   );
-  assert.equal(oneActive.percent, 75);
+  assert.equal(oneActive.percent, 0);
 
   const done = agreementSigningProgress(
     envelope("completed", [recipient({ id: "a", name: "Ali", status: "signed", order: 1 })])
@@ -66,6 +66,7 @@ test("agreementSigningProgress lists waiting recipients and blocks correct after
       recipient({ id: "c", name: "Carol", status: "pending", order: 3 }),
     ])
   );
+  assert.equal(multi.percent, 33);
   assert.equal(multi.summaryLabel, "Waiting for Bob");
   assert.equal(multi.waitingCount, 1);
   assert.equal(multi.canCorrect, false);
@@ -73,4 +74,32 @@ test("agreementSigningProgress lists waiting recipients and blocks correct after
     multi.recipients.map((item) => item.state),
     ["signed", "waiting", "pending"]
   );
+});
+
+test("agreementSigningProgress percent follows completed signatures only", () => {
+  const noneSigned = agreementSigningProgress(
+    envelope("sent", [
+      recipient({ id: "a", name: "Zaima", status: "sent", order: 1 }),
+      recipient({ id: "b", name: "Ali", status: "sent", order: 2 }),
+    ])
+  );
+  assert.equal(noneSigned.percent, 0);
+  assert.equal(noneSigned.summaryLabel, "Waiting for 2 others");
+
+  const oneOfTwo = agreementSigningProgress(
+    envelope("sent", [
+      recipient({ id: "a", name: "Ali", status: "signed", order: 1 }),
+      recipient({ id: "b", name: "Zaima", status: "sent", order: 2 }),
+    ])
+  );
+  assert.equal(oneOfTwo.percent, 50);
+  assert.equal(oneOfTwo.summaryLabel, "Waiting for Zaima");
+
+  const bothSigned = agreementSigningProgress(
+    envelope("completed", [
+      recipient({ id: "a", name: "Ali", status: "signed", order: 1 }),
+      recipient({ id: "b", name: "Zaima", status: "signed", order: 2 }),
+    ])
+  );
+  assert.equal(bothSigned.percent, 100);
 });

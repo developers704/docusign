@@ -111,7 +111,7 @@ export default function HomeActivityRow({ item, canCreate }: { item: HomeActivit
             <div className="mt-2 h-1.5 rounded-full bg-[#e8e8ee]">
               <div
                 className="h-1.5 rounded-full bg-[#4c00ff] transition-[width] duration-300"
-                style={{ width: `${Math.max(8, item.progressPercent ?? 25)}%` }}
+                style={{ width: `${item.progressPercent ?? 0}%` }}
               />
             </div>
 

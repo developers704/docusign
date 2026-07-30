@@ -3995,5 +3995,221 @@
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Code/1.129.0 Chrome/148.0.7778.280 Electron/42.6.0 Safari/537.36",
     "id": "51a2c757-ea82-4a4e-ad1b-299fd2927f9c",
     "createdAt": "2026-07-28T16:23:07.535Z"
+  },
+  {
+    "officeId": "3faffcb3-614b-4d18-ae94-768b864c533b",
+    "envelopeId": "e83e42dd-9594-4b17-86e9-80a9891d6f01",
+    "recipientId": null,
+    "type": "envelope_created",
+    "message": "valliani created the envelope in Valliani",
+    "ipAddress": null,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0",
+    "metadata": {
+      "officeName": "Valliani",
+      "createdBy": "hr@valliani.app",
+      "workflowType": "sequential"
+    },
+    "id": "20fa3dd2-0328-40fd-bd05-65d7f15d9913",
+    "createdAt": "2026-07-30T22:23:55.926Z"
+  },
+  {
+    "officeId": "3faffcb3-614b-4d18-ae94-768b864c533b",
+    "envelopeId": "e83e42dd-9594-4b17-86e9-80a9891d6f01",
+    "recipientId": null,
+    "type": "workflow_type_selected",
+    "message": "Workflow selected: sequential",
+    "ipAddress": null,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0",
+    "id": "aaa907d2-1816-443a-b8d7-cebea85dacc0",
+    "createdAt": "2026-07-30T22:23:55.934Z"
+  },
+  {
+    "officeId": "3faffcb3-614b-4d18-ae94-768b864c533b",
+    "envelopeId": "e83e42dd-9594-4b17-86e9-80a9891d6f01",
+    "recipientId": null,
+    "type": "envelope_created",
+    "message": "valliani prepared 4 signing fields",
+    "ipAddress": null,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0",
+    "metadata": {
+      "fields": 4,
+      "syncedBulkCount": 0
+    },
+    "id": "5874906e-fb11-457a-918c-bed5f27af994",
+    "createdAt": "2026-07-30T22:25:00.208Z"
+  },
+  {
+    "officeId": "3faffcb3-614b-4d18-ae94-768b864c533b",
+    "envelopeId": "e83e42dd-9594-4b17-86e9-80a9891d6f01",
+    "recipientId": null,
+    "type": "signing_step_activated",
+    "message": "Signing step 1 activated for 1 recipient(s).",
+    "ipAddress": null,
+    "userAgent": null,
+    "metadata": {
+      "workflowType": "sequential",
+      "step": 1,
+      "recipients": 1
+    },
+    "id": "37acb713-783e-4f09-afa2-f903d1588748",
+    "createdAt": "2026-07-30T22:25:01.062Z"
+  },
+  {
+    "officeId": "3faffcb3-614b-4d18-ae94-768b864c533b",
+    "envelopeId": "e83e42dd-9594-4b17-86e9-80a9891d6f01",
+    "recipientId": "1785450077433-41ec7st",
+    "type": "email_sent",
+    "message": "Signing invitation emailed to shafquat12141@gmail.com",
+    "ipAddress": null,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0",
+    "id": "7b484afa-d76d-434f-9686-de33a0870115",
+    "createdAt": "2026-07-30T22:25:03.370Z"
+  },
+  {
+    "officeId": "3faffcb3-614b-4d18-ae94-768b864c533b",
+    "envelopeId": "e83e42dd-9594-4b17-86e9-80a9891d6f01",
+    "recipientId": null,
+    "type": "envelope_created",
+    "message": "valliani opened envelope for correction",
+    "ipAddress": null,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0",
+    "metadata": {
+      "action": "correct"
+    },
+    "id": "da586b35-b802-4857-8d6f-3366fafb3f9a",
+    "createdAt": "2026-07-30T22:26:14.369Z"
+  },
+  {
+    "officeId": "3faffcb3-614b-4d18-ae94-768b864c533b",
+    "envelopeId": "e83e42dd-9594-4b17-86e9-80a9891d6f01",
+    "recipientId": null,
+    "type": "envelope_created",
+    "message": "valliani updated draft recipients",
+    "ipAddress": null,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0",
+    "metadata": {
+      "recipients": 2
+    },
+    "id": "8a209562-a5a8-4517-ab2e-cb27251dff7d",
+    "createdAt": "2026-07-30T22:26:46.970Z"
+  },
+  {
+    "officeId": "3faffcb3-614b-4d18-ae94-768b864c533b",
+    "envelopeId": "e83e42dd-9594-4b17-86e9-80a9891d6f01",
+    "recipientId": null,
+    "type": "envelope_created",
+    "message": "valliani prepared 4 signing fields",
+    "ipAddress": null,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0",
+    "metadata": {
+      "fields": 4,
+      "syncedBulkCount": 0
+    },
+    "id": "2b0ff1ac-0e99-46d7-8815-229a19dca38f",
+    "createdAt": "2026-07-30T22:27:05.861Z"
+  },
+  {
+    "officeId": "3faffcb3-614b-4d18-ae94-768b864c533b",
+    "envelopeId": "e83e42dd-9594-4b17-86e9-80a9891d6f01",
+    "recipientId": null,
+    "type": "signing_step_activated",
+    "message": "Signing step 1 activated for 1 recipient(s).",
+    "ipAddress": null,
+    "userAgent": null,
+    "metadata": {
+      "workflowType": "sequential",
+      "step": 1,
+      "recipients": 1
+    },
+    "id": "c070977f-248e-46ae-a21e-175060a25ce5",
+    "createdAt": "2026-07-30T22:27:05.898Z"
+  },
+  {
+    "officeId": "3faffcb3-614b-4d18-ae94-768b864c533b",
+    "envelopeId": "e83e42dd-9594-4b17-86e9-80a9891d6f01",
+    "recipientId": "1785450077433-41ec7st",
+    "type": "email_sent",
+    "message": "Signing invitation emailed to developer@arrakconsulting.com",
+    "ipAddress": null,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0",
+    "id": "f9e37ba5-ad7c-4738-9b26-c4faca06fc2c",
+    "createdAt": "2026-07-30T22:27:08.035Z"
+  },
+  {
+    "officeId": "3faffcb3-614b-4d18-ae94-768b864c533b",
+    "envelopeId": "e83e42dd-9594-4b17-86e9-80a9891d6f01",
+    "recipientId": "1785450077433-41ec7st",
+    "type": "recipient_viewed",
+    "message": "developer opened the signing request",
+    "ipAddress": null,
+    "userAgent": null,
+    "id": "008b5559-0806-4551-baaa-a1eb60a0e936",
+    "createdAt": "2026-07-30T22:27:58.104Z"
+  },
+  {
+    "officeId": "3faffcb3-614b-4d18-ae94-768b864c533b",
+    "envelopeId": "e83e42dd-9594-4b17-86e9-80a9891d6f01",
+    "recipientId": "1785450124865-f4kucvj",
+    "type": "invitation_sent",
+    "message": "Next signing invitation sent to alimalik.arrakconsulting@gmail.com",
+    "ipAddress": null,
+    "userAgent": null,
+    "id": "39a611ce-d867-4086-bbec-59844dfbdc42",
+    "createdAt": "2026-07-30T22:28:26.524Z"
+  },
+  {
+    "officeId": "3faffcb3-614b-4d18-ae94-768b864c533b",
+    "envelopeId": "e83e42dd-9594-4b17-86e9-80a9891d6f01",
+    "recipientId": "1785450077433-41ec7st",
+    "type": "recipient_signed",
+    "message": "developer completed step action: signed",
+    "ipAddress": "127.0.0.1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+    "id": "164a2555-70bd-4840-b2cc-e6a22e415677",
+    "createdAt": "2026-07-30T22:28:26.540Z"
+  },
+  {
+    "officeId": "3faffcb3-614b-4d18-ae94-768b864c533b",
+    "envelopeId": "e83e42dd-9594-4b17-86e9-80a9891d6f01",
+    "recipientId": "1785450124865-f4kucvj",
+    "type": "recipient_viewed",
+    "message": "ali opened the signing request",
+    "ipAddress": null,
+    "userAgent": null,
+    "id": "b2fb4e94-f8a3-46d4-9826-2fd6463796ea",
+    "createdAt": "2026-07-30T22:29:41.803Z"
+  },
+  {
+    "officeId": "3faffcb3-614b-4d18-ae94-768b864c533b",
+    "envelopeId": "e83e42dd-9594-4b17-86e9-80a9891d6f01",
+    "recipientId": "1785450124865-f4kucvj",
+    "type": "recipient_signed",
+    "message": "ali completed step action: signed",
+    "ipAddress": "127.0.0.1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+    "id": "b6592c52-a570-4633-a6ac-0a8c0bd188f2",
+    "createdAt": "2026-07-30T22:30:02.060Z"
+  },
+  {
+    "officeId": "3faffcb3-614b-4d18-ae94-768b864c533b",
+    "envelopeId": "e83e42dd-9594-4b17-86e9-80a9891d6f01",
+    "recipientId": null,
+    "type": "envelope_completed",
+    "message": "All required recipient actions are completed.",
+    "ipAddress": null,
+    "userAgent": null,
+    "id": "6e371edb-9911-4220-b8ae-1a6838346b4b",
+    "createdAt": "2026-07-30T22:30:04.174Z"
+  },
+  {
+    "officeId": "3faffcb3-614b-4d18-ae94-768b864c533b",
+    "envelopeId": "e83e42dd-9594-4b17-86e9-80a9891d6f01",
+    "recipientId": null,
+    "type": "invitation_sent",
+    "message": "Completion email sent to 2 recipient(s)",
+    "ipAddress": null,
+    "userAgent": null,
+    "id": "ace58e8d-cc66-451f-8a7d-0f6075b2981c",
+    "createdAt": "2026-07-30T22:30:08.224Z"
   }
 ]
