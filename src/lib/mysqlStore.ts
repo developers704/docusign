@@ -305,13 +305,19 @@ export async function mysqlWriteEnvelopes(envelopes: EnvelopeRecord[]) {
 
 export async function mysqlFindEnvelopeByToken(token: string) {
   const pool = requirePool();
-  const tokenHash = hashToken(token);
+  let normalized = String(token || "").trim();
+  try {
+    normalized = decodeURIComponent(normalized) || normalized;
+  } catch {
+    // keep raw token
+  }
+  const tokenHash = hashToken(normalized);
   const envelopes = await mysqlReadEnvelopes();
 
   for (let envelopeIndex = 0; envelopeIndex < envelopes.length; envelopeIndex += 1) {
     const recipientIndex = envelopes[envelopeIndex].recipients.findIndex((recipient) => {
       const hashMatch = Boolean(recipient.tokenHash && recipient.tokenHash === tokenHash);
-      const legacyMatch = Boolean(recipient.signingToken && recipient.signingToken === token);
+      const legacyMatch = Boolean(recipient.signingToken && recipient.signingToken === normalized);
       return hashMatch || legacyMatch;
     });
     if (recipientIndex >= 0) {

@@ -366,7 +366,9 @@ export default function SigningWorkspace({
         setMessage(result.error || "Document could not be signed.");
         return;
       }
-      router.replace(`/sign/${apiToken}/thanks`);
+      // Hard nav so thank-you always loads on production (soft router can stall behind reverse proxies).
+      window.location.assign(`/sign/${apiToken}/thanks`);
+      return;
     } catch {
       setMessage("Connection error. Please try again.");
     } finally {

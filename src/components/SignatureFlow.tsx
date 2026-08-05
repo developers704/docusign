@@ -129,7 +129,8 @@ export default function SignatureFlow({
       });
       const result = (await response.json()) as { error?: string; completed?: boolean };
       if (!response.ok) return setMessage(result.error || "Document could not be signed.");
-      router.replace(`/sign/${apiToken}/thanks`);
+      window.location.assign(`/sign/${apiToken}/thanks`);
+      return;
     } catch {
       setMessage("Connection error. Please try again.");
     } finally {

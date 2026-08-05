@@ -21,7 +21,13 @@ export async function GET(_: Request, { params }: { params: Promise<{ token: str
 
   const storedPath = envelope.signedPdfPath || envelope.workingPdfPath || envelope.originalPdfPath;
   const absolute = path.isAbsolute(storedPath) ? storedPath : path.join(process.cwd(), storedPath);
-  const bytes = await readFile(absolute);
+  let bytes: Buffer;
+  try {
+    bytes = await readFile(absolute);
+  } catch (error) {
+    console.error("sign document: missing pdf", absolute, error);
+    return new Response("Document file is missing on the server", { status: 404 });
+  }
   const fileName = envelope.originalFileName || `${envelope.title || "document"}.pdf`;
   const assignments = envelope.pageAssignments || [];
 

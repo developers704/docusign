@@ -363,15 +363,28 @@ export async function getEnvelopeById(id: string, officeId?: string | null) {
   return envelopes.find((envelope) => envelope.id === id);
 }
 
+/** Decode once if the URL/%-encoded link was double-safe-encoded; never throws. */
+export function normalizeSigningToken(token: string) {
+  const raw = String(token || "").trim();
+  if (!raw) return raw;
+  try {
+    const decoded = decodeURIComponent(raw);
+    return decoded || raw;
+  } catch {
+    return raw;
+  }
+}
+
 export async function findEnvelopeByToken(token: string) {
-  if (isDatabaseConfigured()) return mysqlStore.mysqlFindEnvelopeByToken(token);
-  const tokenHash = hashToken(token);
+  const normalized = normalizeSigningToken(token);
+  if (isDatabaseConfigured()) return mysqlStore.mysqlFindEnvelopeByToken(normalized);
+  const tokenHash = hashToken(normalized);
   const envelopes = await readEnvelopes();
 
   for (let envelopeIndex = 0; envelopeIndex < envelopes.length; envelopeIndex += 1) {
     const recipientIndex = envelopes[envelopeIndex].recipients.findIndex((recipient) => {
       const hashMatch = Boolean(recipient.tokenHash && recipient.tokenHash === tokenHash);
-      const legacyMatch = Boolean(recipient.signingToken && recipient.signingToken === token);
+      const legacyMatch = Boolean(recipient.signingToken && recipient.signingToken === normalized);
       return hashMatch || legacyMatch;
     });
 
@@ -726,21 +739,27 @@ export async function createAppNotification(input: {
   message: string;
   href?: string | null;
 }) {
-  const notifications = await readNotifications();
-  const item: AppNotificationRecord = {
-    id: crypto.randomUUID(),
-    officeId: input.officeId,
-    envelopeId: input.envelopeId || null,
-    type: input.type,
-    title: input.title,
-    message: input.message,
-    href: input.href ?? (input.envelopeId ? `/open/envelope/${input.envelopeId}` : "/agreements"),
-    createdAt: new Date().toISOString(),
-    readBy: [],
-  };
-  notifications.unshift(item);
-  await writeNotifications(notifications);
-  return item;
+  try {
+    const notifications = await readNotifications();
+    const item: AppNotificationRecord = {
+      id: crypto.randomUUID(),
+      officeId: input.officeId,
+      envelopeId: input.envelopeId || null,
+      type: input.type,
+      title: input.title,
+      message: input.message,
+      href: input.href ?? (input.envelopeId ? `/open/envelope/${input.envelopeId}` : "/agreements"),
+      createdAt: new Date().toISOString(),
+      readBy: [],
+    };
+    notifications.unshift(item);
+    await writeNotifications(notifications);
+    return item;
+  } catch (error) {
+    // ponytail: never block signing/viewing if notifications.json is not writable on the VM
+    console.error("createAppNotification failed:", error);
+    return null;
+  }
 }
 
 export async function listNotificationsForSession(input: {

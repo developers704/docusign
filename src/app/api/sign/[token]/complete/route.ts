@@ -193,55 +193,73 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
 
   const completed = evaluateEnvelopeCompletion(found.envelope);
   if (!completed) {
-    const activated = activateNextRecipients(found.envelope);
-    for (const recipient of activated) {
-      const rawToken = issueRecipientSigningToken(recipient);
-      recipient.sentAt = now;
-      const result = await sendSignatureRequestEmail(found.envelope, recipient, rawToken);
-      await addAuditEvent({
-        officeId: found.envelope.officeId,
-        envelopeId: found.envelope.id,
-        recipientId: recipient.id,
-        type: result.sent ? "invitation_sent" : "invitation_failed",
-        message: result.sent ? `Next signing invitation sent to ${recipient.email}` : `Invitation failed: ${result.reason}`,
-        ipAddress: null,
-        userAgent: null,
-      });
+    try {
+      const activated = activateNextRecipients(found.envelope);
+      for (const recipient of activated) {
+        const rawToken = issueRecipientSigningToken(recipient);
+        recipient.sentAt = now;
+        const result = await sendSignatureRequestEmail(found.envelope, recipient, rawToken);
+        await addAuditEvent({
+          officeId: found.envelope.officeId,
+          envelopeId: found.envelope.id,
+          recipientId: recipient.id,
+          type: result.sent ? "invitation_sent" : "invitation_failed",
+          message: result.sent ? `Next signing invitation sent to ${recipient.email}` : `Invitation failed: ${result.reason}`,
+          ipAddress: null,
+          userAgent: null,
+        });
+      }
+    } catch (error) {
+      console.error("sign complete: next signer invite failed", error);
     }
   }
 
   if (completed) {
-    const final = await finalizeEnvelopePdf(found.envelope);
-    found.envelope.signedPdfPath = final.relativePath;
-    found.envelope.certificateId = final.certificateId;
-    found.envelope.originalSha256 = final.originalHash;
-    found.envelope.signedSha256 = final.signedHash;
+    try {
+      const final = await finalizeEnvelopePdf(found.envelope);
+      found.envelope.signedPdfPath = final.relativePath;
+      found.envelope.certificateId = final.certificateId;
+      found.envelope.originalSha256 = final.originalHash;
+      found.envelope.signedSha256 = final.signedHash;
+    } catch (error) {
+      // Keep the recipient marked complete even if certificate PDF fails on the VM.
+      console.error("sign complete: finalizeEnvelopePdf failed", error);
+    }
   }
 
   await writeEnvelopes(found.envelopes);
 
-  await addAuditEvent({
-    officeId: found.envelope.officeId,
-    envelopeId: found.envelope.id,
-    recipientId: found.recipient.id,
-    type: actorAction === "approved" ? "recipient_approved" : actorAction === "acknowledged" ? "recipient_acknowledged" : "recipient_signed",
-    message: `${found.recipient.name} completed step action: ${actorAction}`,
-    ipAddress,
-    userAgent: found.recipient.signerUserAgent,
-  });
-
-  const notifyEmails = await resolveSenderNotifyEmails(found.envelope);
-  const signedMail = await sendSenderSignedEmail(found.envelope, found.recipient, actorAction, notifyEmails);
-  if (!signedMail.sent) {
+  // Side effects after save must not fail the signing response (VM SMTP / notify / audit issues).
+  try {
     await addAuditEvent({
       officeId: found.envelope.officeId,
       envelopeId: found.envelope.id,
       recipientId: found.recipient.id,
-      type: "email_failed",
-      message: `Signed notice to office failed: ${signedMail.reason}`,
-      ipAddress: null,
-      userAgent: null,
+      type: actorAction === "approved" ? "recipient_approved" : actorAction === "acknowledged" ? "recipient_acknowledged" : "recipient_signed",
+      message: `${found.recipient.name} completed step action: ${actorAction}`,
+      ipAddress,
+      userAgent: found.recipient.signerUserAgent,
     });
+  } catch (error) {
+    console.error("sign complete: audit failed", error);
+  }
+
+  try {
+    const notifyEmails = await resolveSenderNotifyEmails(found.envelope);
+    const signedMail = await sendSenderSignedEmail(found.envelope, found.recipient, actorAction, notifyEmails);
+    if (!signedMail.sent) {
+      await addAuditEvent({
+        officeId: found.envelope.officeId,
+        envelopeId: found.envelope.id,
+        recipientId: found.recipient.id,
+        type: "email_failed",
+        message: `Signed notice to office failed: ${signedMail.reason}`,
+        ipAddress: null,
+        userAgent: null,
+      });
+    }
+  } catch (error) {
+    console.error("sign complete: signed email failed", error);
   }
 
   const actionLabel = actorAction === "signed" ? "signed" : actorAction === "approved" ? "approved" : "acknowledged";
@@ -266,40 +284,48 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
       title: "Agreement completed",
       message: `"${found.envelope.title}" is fully signed`,
     });
-    await addAuditEvent({
-      officeId: found.envelope.officeId,
-      envelopeId: found.envelope.id,
-      recipientId: null,
-      type: "envelope_completed",
-      message: "All required recipient actions are completed.",
-      ipAddress: null,
-      userAgent: null,
-    });
+    try {
+      await addAuditEvent({
+        officeId: found.envelope.officeId,
+        envelopeId: found.envelope.id,
+        recipientId: null,
+        type: "envelope_completed",
+        message: "All required recipient actions are completed.",
+        ipAddress: null,
+        userAgent: null,
+      });
+    } catch (error) {
+      console.error("sign complete: completion audit failed", error);
+    }
     // Always email every participant (signers + receives_copy), one message each.
-    const mailRecipients = found.envelope.recipients.filter(
-      (recipient) => recipient.email && recipient.status !== "declined"
-    );
-    const result = await sendCompletionEmail(found.envelope, mailRecipients);
-    if (!result.sent) {
-      await addAuditEvent({
-        officeId: found.envelope.officeId,
-        envelopeId: found.envelope.id,
-        recipientId: null,
-        type: "email_failed",
-        message: `Completion email failed: ${result.reason}`,
-        ipAddress: null,
-        userAgent: null,
-      });
-    } else {
-      await addAuditEvent({
-        officeId: found.envelope.officeId,
-        envelopeId: found.envelope.id,
-        recipientId: null,
-        type: "invitation_sent",
-        message: `Completion email sent to ${mailRecipients.length} recipient(s)${result.reason ? ` (${result.reason})` : ""}`,
-        ipAddress: null,
-        userAgent: null,
-      });
+    try {
+      const mailRecipients = found.envelope.recipients.filter(
+        (recipient) => recipient.email && recipient.status !== "declined"
+      );
+      const result = await sendCompletionEmail(found.envelope, mailRecipients);
+      if (!result.sent) {
+        await addAuditEvent({
+          officeId: found.envelope.officeId,
+          envelopeId: found.envelope.id,
+          recipientId: null,
+          type: "email_failed",
+          message: `Completion email failed: ${result.reason}`,
+          ipAddress: null,
+          userAgent: null,
+        });
+      } else {
+        await addAuditEvent({
+          officeId: found.envelope.officeId,
+          envelopeId: found.envelope.id,
+          recipientId: null,
+          type: "invitation_sent",
+          message: `Completion email sent to ${mailRecipients.length} recipient(s)${result.reason ? ` (${result.reason})` : ""}`,
+          ipAddress: null,
+          userAgent: null,
+        });
+      }
+    } catch (error) {
+      console.error("sign complete: completion email failed", error);
     }
     try {
       const { markSubmissionCompletedByEnvelope } = await import("@/lib/services/powerFormSubmissionService");

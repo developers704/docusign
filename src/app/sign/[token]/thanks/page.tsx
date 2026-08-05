@@ -3,6 +3,8 @@ import SignThankYouView from "@/components/SignThankYouView";
 import { findEnvelopeByToken } from "@/lib/store";
 import { inferRecipientActionType } from "@/lib/services/envelopeWorkflowService";
 
+export const dynamic = "force-dynamic";
+
 export default async function SignThankYouPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const found = await findEnvelopeByToken(token);

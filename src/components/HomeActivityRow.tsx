@@ -73,7 +73,7 @@ export default function HomeActivityRow({ item, canCreate }: { item: HomeActivit
   }
 
   return (
-    <div className="flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+    <div className="flex flex-col flex-wrap gap-3 py-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
       <div className="min-w-0 flex-1">
         <Link
           href={`/envelopes/${item.id}`}
@@ -206,7 +206,7 @@ export default function HomeActivityRow({ item, canCreate }: { item: HomeActivit
         )}
       </div>
 
-      {message ? <p className="w-full text-[12px] font-semibold text-[#666] sm:col-span-3">{message}</p> : null}
+      {message ? <p className="basis-full w-full text-[12px] font-semibold text-[#666]">{message}</p> : null}
     </div>
   );
 }

@@ -7,6 +7,8 @@ import type { EnvelopeStatus } from "@/lib/types";
 import { sendSenderViewedEmail } from "@/lib/email";
 import { resolveSenderNotifyEmails } from "@/lib/senderNotify";
 
+export const dynamic = "force-dynamic";
+
 export default async function SigningPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const found = await findEnvelopeByToken(token);
@@ -31,28 +33,40 @@ export default async function SigningPage({ params }: { params: Promise<{ token:
     if (found.recipient.status === "sent") found.recipient.status = "viewed";
     if (found.envelope.status === "sent") found.envelope.status = "viewed";
     found.envelope.updatedAt = now;
-    await writeEnvelopes(found.envelopes);
-    await addAuditEvent({
-      officeId: found.envelope.officeId,
-      envelopeId: found.envelope.id,
-      recipientId: found.recipient.id,
-      type: "recipient_viewed",
-      message: `${found.recipient.name} opened the signing request`,
-      ipAddress: null,
-      userAgent: null,
-    });
-    const notifyEmails = await resolveSenderNotifyEmails(found.envelope);
-    const viewedMail = await sendSenderViewedEmail(found.envelope, found.recipient, notifyEmails);
-    if (!viewedMail.sent) {
+    try {
+      await writeEnvelopes(found.envelopes);
+    } catch (error) {
+      console.error("sign page: failed to persist viewed status", error);
+    }
+    try {
       await addAuditEvent({
         officeId: found.envelope.officeId,
         envelopeId: found.envelope.id,
         recipientId: found.recipient.id,
-        type: "email_failed",
-        message: `Viewed notice to office failed: ${viewedMail.reason}`,
+        type: "recipient_viewed",
+        message: `${found.recipient.name} opened the signing request`,
         ipAddress: null,
         userAgent: null,
       });
+    } catch (error) {
+      console.error("sign page: audit viewed failed", error);
+    }
+    try {
+      const notifyEmails = await resolveSenderNotifyEmails(found.envelope);
+      const viewedMail = await sendSenderViewedEmail(found.envelope, found.recipient, notifyEmails);
+      if (!viewedMail.sent) {
+        await addAuditEvent({
+          officeId: found.envelope.officeId,
+          envelopeId: found.envelope.id,
+          recipientId: found.recipient.id,
+          type: "email_failed",
+          message: `Viewed notice to office failed: ${viewedMail.reason}`,
+          ipAddress: null,
+          userAgent: null,
+        });
+      }
+    } catch (error) {
+      console.error("sign page: viewed email failed", error);
     }
     await createAppNotification({
       officeId: found.envelope.officeId,
