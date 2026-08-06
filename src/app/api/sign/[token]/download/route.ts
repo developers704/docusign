@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { findEnvelopeByToken, isEnvelopeExpired } from "@/lib/store";
+import { ensureEnvelopeCertificate } from "@/lib/pdf";
+import { findEnvelopeByToken, isEnvelopeExpired, writeEnvelopes } from "@/lib/store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,7 +28,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
     storedPath = envelope.originalPdfPath;
     filename = `${safeName(envelope.title)}-original.pdf`;
   } else {
-    // Signed / completed package (falls back to working copy if finalize not ready yet)
+    // Repair completed envelopes that were saved without a certificate page (VM finalize failures).
+    if (envelope.status === "completed") {
+      try {
+        const changed = await ensureEnvelopeCertificate(envelope);
+        if (changed) await writeEnvelopes(found.envelopes);
+      } catch (error) {
+        console.error("sign download: ensureEnvelopeCertificate failed", error);
+      }
+    }
     storedPath = envelope.signedPdfPath || envelope.workingPdfPath;
     filename = `${safeName(envelope.title)}-${envelope.signedPdfPath ? "completed" : "signed"}.pdf`;
     if (!storedPath) {

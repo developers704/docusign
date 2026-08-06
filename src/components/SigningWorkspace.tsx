@@ -450,9 +450,10 @@ export default function SigningWorkspace({
         <button
           type="button"
           onClick={scrollToDocumentEnd}
-          className="absolute bottom-3 left-1/2 z-30 -translate-x-1/2 rounded-full bg-[#21004c] px-4 py-2 text-[11px] font-semibold text-white shadow-lg hover:bg-[#160033] sm:text-[12px]"
+          className="pointer-events-auto fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-1/2 z-40 w-[min(20rem,calc(100vw-1.5rem))] -translate-x-1/2 rounded-full bg-[#21004c] px-3 py-2.5 text-[11px] font-semibold leading-tight text-white shadow-lg hover:bg-[#160033] sm:absolute sm:bottom-3 sm:w-auto sm:px-4 sm:py-2 sm:text-[12px]"
         >
-          Scroll to the end to finish
+          <span className="sm:hidden">Scroll below to finish</span>
+          <span className="hidden sm:inline">Scroll to the end to finish</span>
         </button>
       ) : null}
 
@@ -480,7 +481,7 @@ export default function SigningWorkspace({
                     type="button"
                     id="sign-start-tab"
                     onClick={goToGuideField}
-                    className="absolute z-40 left-1 inline-flex -translate-y-1/2 items-center bg-[#4c00ff] py-1.5 pl-2.5 pr-3 text-[12px] font-bold text-white shadow-lg transition-[top] duration-500 ease-out sm:left-[-3.75rem] sm:py-2 sm:pl-3 sm:pr-4 sm:text-[13px]"
+                    className="absolute z-40 left-[-3.35rem] inline-flex -translate-y-1/2 items-center bg-[#4c00ff] py-1.5 pl-2 pr-2.5 text-[11px] font-bold text-white shadow-lg transition-[top] duration-500 ease-out sm:left-[-3.75rem] sm:py-2 sm:pl-3 sm:pr-4 sm:text-[13px]"
                     style={{
                       top: guideTop,
                       clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%)",
@@ -529,7 +530,7 @@ export default function SigningWorkspace({
                       )}
                       {isSign && !signed && !isGuideTarget && (
                         <span
-                          className="pointer-events-none absolute -left-12 top-1/2 z-30 -translate-y-1/2 bg-[#4c00ff] py-1.5 pl-2 pr-3 text-[11px] font-bold text-white shadow"
+                          className="pointer-events-none absolute -left-12 top-1/2 z-30 hidden -translate-y-1/2 bg-[#4c00ff] py-1.5 pl-2 pr-3 text-[11px] font-bold text-white shadow sm:inline-block"
                           style={{ clipPath: "polygon(0 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 0 100%)" }}
                         >
                           {isInitial ? "Initial" : "Sign"}

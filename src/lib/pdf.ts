@@ -478,6 +478,25 @@ export async function finalizeEnvelopePdf(envelope: EnvelopeRecord) {
   return { relativePath, certificateId, originalHash, signedHash };
 }
 
+/**
+ * If an envelope is completed but the certificate page was never written
+ * (common when finalize failed on the VM), build it now and mutate `envelope`.
+ * Returns true when the record was updated.
+ */
+export async function ensureEnvelopeCertificate(envelope: EnvelopeRecord): Promise<boolean> {
+  if (envelope.status !== "completed") return false;
+  if (envelope.certificateId && envelope.signedPdfPath) return false;
+  const source = envelope.workingPdfPath || envelope.originalPdfPath;
+  if (!source) return false;
+  const final = await finalizeEnvelopePdf(envelope);
+  envelope.signedPdfPath = final.relativePath;
+  envelope.certificateId = final.certificateId;
+  envelope.originalSha256 = final.originalHash;
+  envelope.signedSha256 = final.signedHash;
+  envelope.updatedAt = new Date().toISOString();
+  return true;
+}
+
 function wrapText(text: string, font: Awaited<ReturnType<PDFDocument["embedFont"]>>, size: number, maxWidth: number) {
   const lines: string[] = [];
   for (const paragraph of text.replace(/\r/g, "").split("\n")) {

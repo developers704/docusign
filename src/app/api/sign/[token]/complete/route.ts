@@ -215,15 +215,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
   }
 
   if (completed) {
-    try {
-      const final = await finalizeEnvelopePdf(found.envelope);
-      found.envelope.signedPdfPath = final.relativePath;
-      found.envelope.certificateId = final.certificateId;
-      found.envelope.originalSha256 = final.originalHash;
-      found.envelope.signedSha256 = final.signedHash;
-    } catch (error) {
-      // Keep the recipient marked complete even if certificate PDF fails on the VM.
-      console.error("sign complete: finalizeEnvelopePdf failed", error);
+    // Retry once — certificate page must ship with the completed electronic record.
+    let finalized = false;
+    for (let attempt = 0; attempt < 2 && !finalized; attempt += 1) {
+      try {
+        const final = await finalizeEnvelopePdf(found.envelope);
+        found.envelope.signedPdfPath = final.relativePath;
+        found.envelope.certificateId = final.certificateId;
+        found.envelope.originalSha256 = final.originalHash;
+        found.envelope.signedSha256 = final.signedHash;
+        finalized = true;
+      } catch (error) {
+        console.error(`sign complete: finalizeEnvelopePdf failed (attempt ${attempt + 1})`, error);
+      }
     }
   }
 

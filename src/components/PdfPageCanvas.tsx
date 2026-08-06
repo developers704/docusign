@@ -282,8 +282,8 @@ export function EnvelopePdfViewer({
       ref={scrollRef}
       className={
         fillHeight
-          ? "h-[calc(100dvh-3.5rem)] space-y-3 overflow-y-auto overscroll-contain bg-[#e8e8ee] px-1 py-2 pl-8 sm:space-y-4 sm:px-3 sm:pl-14 sm:py-3"
-          : "max-h-[min(780px,70dvh)] space-y-4 overflow-y-auto rounded-xl border border-[#e2e8f0] bg-[#e8e8ee] p-2 pl-10 sm:p-4 sm:pl-16"
+          ? "h-[calc(100dvh-3.5rem)] space-y-3 overflow-y-auto overscroll-contain bg-[#e8e8ee] px-1 py-2 pl-[3.75rem] sm:space-y-4 sm:px-3 sm:pl-16 sm:py-3"
+          : "max-h-[min(780px,70dvh)] space-y-4 overflow-y-auto rounded-xl border border-[#e2e8f0] bg-[#e8e8ee] p-2 pl-[3.75rem] sm:p-4 sm:pl-16"
       }
     >
       {Array.from({ length: pageCount }, (_, index) => (
