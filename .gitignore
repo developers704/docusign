@@ -9,3 +9,24 @@ tsconfig.tsbuildinfo
 .env*.local
 data/smtp-settings.json
 
+
+# Runtime JSON data
+data/audit-events.json
+data/envelopes.json
+data/notifications.json
+data/users.json
+data/*.tmp
+data/*.broken*
+data/*.backup*
+
+# Generated agreement documents
+storage/offices/*/original/*
+storage/offices/*/working/*
+storage/offices/*/signed/*
+
+# Keep folder structure
+!storage/.gitkeep
+!storage/offices/.gitkeep
+data/templates.json
+runtime-backup/
+storage/offices/*/templates/*
