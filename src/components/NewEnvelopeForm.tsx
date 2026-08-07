@@ -828,6 +828,18 @@ export default function NewEnvelopeForm({
           >
             Back
           </button>
+        ) : bulkMode ? (
+          <button
+            type="button"
+            disabled={loading}
+            onClick={() => {
+              if (typeof window !== "undefined" && window.history.length > 1) router.back();
+              else router.push("/");
+            }}
+            className="rounded-[2px] border border-[#c6c6c6] px-5 py-2.5 text-[14px] font-semibold text-[#333]"
+          >
+            Back
+          </button>
         ) : (
           <span />
         )}

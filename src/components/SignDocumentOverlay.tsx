@@ -94,7 +94,7 @@ export default function SignDocumentOverlay({
                       left: `${field.x}%`,
                       top: `${field.y}%`,
                       width: `${Math.max(field.width, 12)}%`,
-                      height: `${Math.max(field.height, 4)}%`,
+                      height: `${Math.max(field.height, 2.4)}%`,
                       borderColor: accentColor,
                       backgroundColor: `${accentColor}18`,
                       color: accentColor,

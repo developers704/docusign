@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import AdminShell from "@/components/AdminShell";
 import type { EnvelopeRecord } from "@/lib/types";
+import HistoryBackButton from "@/components/HistoryBackButton";
 import NewEnvelopeForm from "@/components/NewEnvelopeForm";
 import { canAccessOffice, canCreateEnvelopes, getSessionOffice, requireAdmin } from "@/lib/auth";
 import { featureFlags } from "@/lib/featureFlags";
@@ -65,6 +67,12 @@ export default async function NewDocumentPage({
                   : "Upload a Document and Add Envelope Recipients"}
             </h1>
           </div>
+          {bulk === "1" && !editEnvelope ? (
+            <HistoryBackButton
+              fallbackHref="/"
+              className="shrink-0 rounded-[2px] border border-[#c6c6c6] bg-white px-4 py-2 text-[14px] font-semibold text-[#333] hover:bg-[#f7f7f7]"
+            />
+          ) : null}
         </div>
         {bulk === "1" && (
           <div className="mb-5 rounded border border-[#e0e0e0] bg-white p-5">
@@ -72,6 +80,11 @@ export default async function NewDocumentPage({
             <p className="mt-1 text-sm text-[#666]">
               Same document for everyone — each person gets a <strong>separate agreement</strong> in Agreements (with
               their name), and their own certificate after they sign.
+            </p>
+            <p className="mt-3">
+              <Link href="/documents/new" className="text-[14px] font-semibold text-[#4c00ff] hover:underline">
+                Exit bulk — use regular send
+              </Link>
             </p>
           </div>
         )}

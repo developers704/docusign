@@ -163,9 +163,14 @@ export default function RecipientList({
         </div>
       )}
       {bulkMode && (
-        <p className="text-[13px] text-[#666]">
-          Add everyone who should receive a copy. Each name becomes a separate agreement in your list.
-        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-[13px] text-[#666]">
+            Add everyone who should receive a copy. Each name becomes a separate agreement in your list.
+          </p>
+          <Link href="/documents/new" className="text-[13px] font-semibold text-[#4c00ff] hover:underline">
+            Exit bulk send
+          </Link>
+        </div>
       )}
 
       {showTemplateRoles && !bulkMode && <TemplateRoleBanner roles={templateRoles} recipients={recipients} />}

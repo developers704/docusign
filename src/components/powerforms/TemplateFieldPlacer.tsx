@@ -6,15 +6,15 @@ import { Icon, type IconName } from "@/components/Icons";
 import PdfPageCanvas from "@/components/PdfPageCanvas";
 
 const palette: Array<{ type: DocumentFieldType; label: string; icon: IconName; w: number; h: number }> = [
-  { type: "signature", label: "Signature", icon: "agreement", w: 16, h: 4 },
-  { type: "initials", label: "Initial", icon: "template", w: 10, h: 3.5 },
-  { type: "date", label: "Date Signed", icon: "calendar", w: 16, h: 3.5 },
-  { type: "name", label: "Name", icon: "contact", w: 18, h: 3.5 },
-  { type: "email", label: "Email", icon: "contact", w: 20, h: 3.5 },
-  { type: "phone", label: "Phone", icon: "contact", w: 16, h: 3.5 },
-  { type: "text", label: "Text", icon: "file", w: 18, h: 4 },
-  { type: "number", label: "Number", icon: "file", w: 14, h: 3.5 },
-  { type: "checkbox", label: "Checkbox", icon: "check", w: 4, h: 4 },
+  { type: "signature", label: "Signature", icon: "agreement", w: 14, h: 2.4 },
+  { type: "initials", label: "Initial", icon: "template", w: 8, h: 2.2 },
+  { type: "date", label: "Date Signed", icon: "calendar", w: 14, h: 2.2 },
+  { type: "name", label: "Name", icon: "contact", w: 16, h: 2.2 },
+  { type: "email", label: "Email", icon: "contact", w: 18, h: 2.2 },
+  { type: "phone", label: "Phone", icon: "contact", w: 14, h: 2.2 },
+  { type: "text", label: "Text", icon: "file", w: 16, h: 2.4 },
+  { type: "number", label: "Number", icon: "file", w: 12, h: 2.2 },
+  { type: "checkbox", label: "Checkbox", icon: "check", w: 3, h: 2.4 },
 ];
 
 const FIELD_GAP = 1.1;
@@ -279,7 +279,7 @@ export default function TemplateFieldPlacer({
     function move(e: PointerEvent) {
       patch(field.id, {
         width: Math.min(Math.max(5, startWidth + ((e.clientX - startX) / rect.width) * 100), 100 - field.x),
-        height: Math.min(Math.max(3, startHeight + ((e.clientY - startY) / rect.height) * 100), 100 - field.y),
+        height: Math.min(Math.max(1.8, startHeight + ((e.clientY - startY) / rect.height) * 100), 100 - field.y),
       });
     }
     function up() {
@@ -306,8 +306,8 @@ export default function TemplateFieldPlacer({
           style={{
             left: ghostPos.x,
             top: ghostPos.y,
-            width: Math.max(90, placeTool.w * 4),
-            height: Math.max(28, placeTool.h * 5),
+            width: Math.max(72, placeTool.w * 4),
+            height: Math.max(18, placeTool.h * 5),
             transform: "translate(-50%, -50%)",
           }}
         >

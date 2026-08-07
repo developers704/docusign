@@ -472,7 +472,7 @@ export default function SigningWorkspace({
             );
             if (!pageFields.length && !showGuide) return null;
             const guideTop = guideAtField && guideField
-              ? `${guideField.y + Math.max(guideField.height, 5) / 2}%`
+              ? `${guideField.y + Math.max(guideField.height, 2.4) / 2}%`
               : "1.25rem";
             return (
               <>
@@ -515,7 +515,7 @@ export default function SigningWorkspace({
                         left: `${field.x}%`,
                         top: `${field.y}%`,
                         width: `${field.width}%`,
-                        height: `${Math.max(field.height, isSign ? 3.5 : 3)}%`,
+                        height: `${Math.max(field.height, isSign ? 2.4 : 2)}%`,
                       }}
                     >
                       {isSign && !signed && (
