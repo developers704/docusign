@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import { useRouter } from "next/navigation";
 import OtpGate from "./OtpGate";
@@ -402,7 +402,7 @@ export default function SigningWorkspace({
     canSign ? (
       <div
         id="sign-consent"
-        className="rounded-xl border border-[#e7e2ec] bg-white p-4 shadow-sm sm:p-5"
+        className="rounded-xl border border-[#e7e2ec] bg-white p-3.5 shadow-sm sm:p-5"
       >
         <label className="flex items-start gap-3 text-[12px] leading-5 text-[#444] sm:text-[13px]">
           <input
@@ -417,13 +417,13 @@ export default function SigningWorkspace({
         {message ? (
           <p className="mt-3 rounded bg-[#f5f5f5] px-3 py-2 text-[12px] font-semibold text-[#555]">{message}</p>
         ) : null}
-        <div className="mt-4 flex flex-wrap items-center gap-3">
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
           <button
             type="button"
             data-finish-sign
             onClick={() => void finish()}
             disabled={busy || !consent || !reachedEnd}
-            className="rounded-[2px] bg-[#4c00ff] px-5 py-2.5 text-[14px] font-semibold text-white hover:bg-[#3d00cf] disabled:opacity-50"
+            className="min-h-11 w-full rounded-[2px] bg-[#4c00ff] px-5 py-2.5 text-[14px] font-semibold text-white hover:bg-[#3d00cf] disabled:opacity-50 sm:w-auto"
           >
             {busy ? "Processing…" : "Finish"}
           </button>
@@ -431,7 +431,7 @@ export default function SigningWorkspace({
             type="button"
             onClick={() => void decline()}
             disabled={busy}
-            className="text-[13px] font-semibold text-[#b33954]"
+            className="min-h-10 text-center text-[13px] font-semibold text-[#b33954] sm:text-left"
           >
             Decline to sign
           </button>
@@ -450,7 +450,7 @@ export default function SigningWorkspace({
         <button
           type="button"
           onClick={scrollToDocumentEnd}
-          className="pointer-events-auto fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-1/2 z-40 w-[min(20rem,calc(100vw-1.5rem))] -translate-x-1/2 rounded-full bg-[#21004c] px-3 py-2.5 text-[11px] font-semibold leading-tight text-white shadow-lg hover:bg-[#160033] sm:absolute sm:bottom-3 sm:w-auto sm:px-4 sm:py-2 sm:text-[12px]"
+          className="pointer-events-auto fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-1/2 z-40 w-[min(18.5rem,calc(100vw-1.25rem))] -translate-x-1/2 rounded-full bg-[#21004c] px-3 py-2.5 text-[11px] font-semibold leading-tight text-white shadow-lg hover:bg-[#160033] sm:absolute sm:bottom-3 sm:w-auto sm:px-4 sm:py-2 sm:text-[12px]"
         >
           <span className="sm:hidden">Scroll below to finish</span>
           <span className="hidden sm:inline">Scroll to the end to finish</span>
@@ -471,9 +471,16 @@ export default function SigningWorkspace({
               canSign && guideField && unsignedRequired && pageNumber === guidePage
             );
             if (!pageFields.length && !showGuide) return null;
-            const guideTop = guideAtField && guideField
-              ? `${guideField.y + Math.max(guideField.height, 2.4) / 2}%`
-              : "1.25rem";
+            const mobileTop =
+              guideAtField && guideField
+                ? `calc(${guideField.y}% - 1.55rem)`
+                : "0.45rem";
+            const desktopTop =
+              guideAtField && guideField
+                ? `${guideField.y + Math.max(guideField.height, 2.4) / 2}%`
+                : "1.25rem";
+            const mobileLeft =
+              guideAtField && guideField ? `${Math.min(Math.max(guideField.x, 1), 72)}%` : "0.45rem";
             return (
               <>
                 {showGuide && guideField && (
@@ -481,11 +488,14 @@ export default function SigningWorkspace({
                     type="button"
                     id="sign-start-tab"
                     onClick={goToGuideField}
-                    className="absolute z-40 left-[-3.35rem] inline-flex -translate-y-1/2 items-center bg-[#4c00ff] py-1.5 pl-2 pr-2.5 text-[11px] font-bold text-white shadow-lg transition-[top] duration-500 ease-out sm:left-[-3.75rem] sm:py-2 sm:pl-3 sm:pr-4 sm:text-[13px]"
-                    style={{
-                      top: guideTop,
-                      clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%)",
-                    }}
+                    className="absolute z-40 inline-flex items-center bg-[#4c00ff] font-bold text-white shadow-md transition-[top,left] duration-500 ease-out rounded-sm px-2 py-1 text-[10px] leading-none left-[var(--m-left)] top-[var(--m-top)] sm:left-[-3.75rem] sm:top-[var(--d-top)] sm:-translate-y-1/2 sm:rounded-none sm:px-0 sm:py-2 sm:pl-3 sm:pr-4 sm:text-[13px] sm:leading-normal sm:shadow-lg sm:[clip-path:polygon(0_0,calc(100%-10px)_0,100%_50%,calc(100%-10px)_100%,0_100%)]"
+                    style={
+                      {
+                        ["--m-top" as string]: mobileTop,
+                        ["--d-top" as string]: desktopTop,
+                        ["--m-left" as string]: mobileLeft,
+                      } as CSSProperties
+                    }
                     title={guideAtField ? (guideField && isInitialsField(guideField) ? "Initial here" : "Sign here") : "Go to signature field"}
                   >
                     {guideAtField ? (guideField && isInitialsField(guideField) ? "Initial" : "Sign") : "Start"}
@@ -519,13 +529,13 @@ export default function SigningWorkspace({
                       }}
                     >
                       {isSign && !signed && (
-                        <span className="pointer-events-none absolute -top-5 left-0 z-30 whitespace-nowrap rounded-sm bg-white/95 px-1.5 py-0.5 text-[10px] font-bold text-[#333] shadow">
-                          {isInitial ? "Required — Initial Here" : "Required — Sign Here"}
+                        <span className="pointer-events-none absolute -top-4 left-0 z-30 max-w-[9.5rem] truncate rounded-sm bg-white/95 px-1 py-0.5 text-[9px] font-bold text-[#333] shadow sm:-top-5 sm:max-w-none sm:px-1.5 sm:text-[10px]">
+                          {isInitial ? "Initial here" : "Sign here"}
                         </span>
                       )}
                       {needsValue && (
-                        <span className="pointer-events-none absolute -top-5 left-0 z-30 whitespace-nowrap rounded-sm bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 shadow">
-                          Required — tap to fill
+                        <span className="pointer-events-none absolute -top-4 left-0 z-30 max-w-[9.5rem] truncate rounded-sm bg-amber-50 px-1 py-0.5 text-[9px] font-bold text-amber-800 shadow sm:-top-5 sm:max-w-none sm:px-1.5 sm:text-[10px]">
+                          Tap to fill
                         </span>
                       )}
                       {isSign && !signed && !isGuideTarget && (
@@ -702,10 +712,10 @@ export default function SigningWorkspace({
       {showAdoptModal && canSign && (
         <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/45 p-0 sm:items-center sm:p-4" role="dialog" aria-modal>
           <div className="flex max-h-[95dvh] w-full max-w-[640px] flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:rounded-lg">
-            <div className="flex items-start justify-between border-b border-[#eee] px-5 py-4">
-              <div>
-                <h2 className="text-[20px] font-semibold text-[#212121]">Adopt Your Signature</h2>
-                <p className="mt-1 text-[13px] text-[#666]">
+            <div className="flex items-start justify-between gap-3 border-b border-[#eee] px-4 py-3.5 sm:px-5 sm:py-4">
+              <div className="min-w-0">
+                <h2 className="text-[18px] font-semibold text-[#212121] sm:text-[20px]">Adopt Your Signature</h2>
+                <p className="mt-1 text-[12px] text-[#666] sm:text-[13px]">
                   Confirm your name, initials, and signature. <span className="text-[#c00]">*Required</span>
                 </p>
               </div>
@@ -880,15 +890,15 @@ export default function SigningWorkspace({
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 border-t border-[#eee] bg-[#fafafa] px-5 py-4">
+            <div className="flex flex-col-reverse gap-2 border-t border-[#eee] bg-[#fafafa] px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:flex-row sm:flex-wrap sm:items-center sm:gap-3 sm:px-5 sm:py-4 sm:pb-4">
               <button
                 type="button"
                 onClick={adoptAndSign}
-                className="rounded-[2px] bg-[#ffc820] px-5 py-2.5 text-[14px] font-bold text-[#212121] hover:bg-[#f0bc00]"
+                className="min-h-11 w-full rounded-[2px] bg-[#ffc820] px-5 py-2.5 text-[14px] font-bold text-[#212121] hover:bg-[#f0bc00] sm:w-auto"
               >
                 Adopt and Sign
               </button>
-              <button type="button" onClick={() => setShowAdoptModal(false)} className="text-[14px] font-semibold text-[#4c00ff]">
+              <button type="button" onClick={() => setShowAdoptModal(false)} className="min-h-10 w-full text-center text-[14px] font-semibold text-[#4c00ff] sm:w-auto sm:text-left">
                 Cancel
               </button>
             </div>

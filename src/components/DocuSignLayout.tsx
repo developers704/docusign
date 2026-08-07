@@ -180,7 +180,7 @@ function DocuSignLayoutInner({
           <MobileNavDrawer section={section} userName={session.name} onClose={() => setMobileNavOpen(false)} />
         )}
 
-        <main className="min-w-0 flex-1 overflow-auto bg-white pb-[env(safe-area-inset-bottom)]">{children}</main>
+        <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-white pb-[env(safe-area-inset-bottom)]">{children}</main>
       </div>
     </div>
   );

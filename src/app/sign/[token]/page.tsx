@@ -91,14 +91,14 @@ export default async function SigningPage({ params }: { params: Promise<{ token:
 
   return (
     <main className="flex h-[100dvh] flex-col overflow-hidden bg-[#f6f3f9] text-[#21004c]">
-      <header className="sticky top-0 z-40 flex h-12 shrink-0 items-center justify-between bg-[#21004c] px-3 text-white pt-[env(safe-area-inset-top)] sm:h-14 sm:px-4">
-        <p className="truncate text-[14px] font-semibold sm:text-[15px]">Review and complete</p>
-        <div className="flex shrink-0 items-center gap-2">
+      <header className="sticky top-0 z-40 flex min-h-12 shrink-0 items-center justify-between gap-2 bg-[#21004c] px-3 text-white pt-[env(safe-area-inset-top)] sm:h-14 sm:px-4">
+        <p className="min-w-0 flex-1 truncate text-[13px] font-semibold sm:text-[15px]">Review and complete</p>
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           {canSign ? (
             <button
               type="button"
               data-finish-sign
-              className="min-h-9 rounded-md bg-[#4c00ff] px-3 py-1.5 text-[13px] font-semibold text-white hover:bg-[#3d00cf] sm:px-4"
+              className="min-h-9 rounded-md bg-[#4c00ff] px-2.5 py-1.5 text-[12px] font-semibold text-white hover:bg-[#3d00cf] sm:px-4 sm:text-[13px]"
             >
               Finish
             </button>

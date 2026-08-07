@@ -282,13 +282,14 @@ export function EnvelopePdfViewer({
       ref={scrollRef}
       className={
         fillHeight
-          ? "h-[calc(100dvh-3.5rem)] space-y-3 overflow-y-auto overscroll-contain bg-[#e8e8ee] px-1 py-2 pl-[3.75rem] sm:space-y-4 sm:px-3 sm:pl-16 sm:py-3"
-          : "max-h-[min(780px,70dvh)] space-y-4 overflow-y-auto rounded-xl border border-[#e2e8f0] bg-[#e8e8ee] p-2 pl-[3.75rem] sm:p-4 sm:pl-16"
+          ? // Mobile: equal left/right gutters + bottom room for fixed scroll CTA. Desktop: left margin for Start/Sign tab.
+            "h-[calc(100dvh-3.5rem)] space-y-3 overflow-y-auto overscroll-contain bg-[#e8e8ee] px-2.5 py-2 pb-20 sm:space-y-4 sm:px-3 sm:pb-3 sm:pl-16 sm:py-3"
+          : "max-h-[min(780px,70dvh)] space-y-4 overflow-y-auto rounded-xl border border-[#e2e8f0] bg-[#e8e8ee] p-2.5 sm:p-4 sm:pl-16"
       }
     >
       {Array.from({ length: pageCount }, (_, index) => (
         <div key={`${src}-${index + 1}`} className="mx-auto w-full max-w-[1100px] overflow-visible rounded-lg bg-white shadow">
-          <p className="border-b border-slate-100 px-3 py-1.5 text-[11px] font-semibold text-slate-500">
+          <p className="border-b border-slate-100 px-2.5 py-1.5 text-[10px] font-semibold text-slate-500 sm:px-3 sm:text-[11px]">
             {title} · Page {index + 1} of {pageCount}
           </p>
           <div className="relative overflow-visible">
