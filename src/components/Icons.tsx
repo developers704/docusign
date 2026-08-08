@@ -33,7 +33,9 @@ export type IconName =
   | "star"
   | "menu"
   | "close"
-  | "folder";
+  | "folder"
+  | "eye"
+  | "eyeOff";
 
 const paths: Record<IconName, ReactNode> = {
   home: <><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/><path d="M9.5 20v-6h5v6"/></>,
@@ -69,6 +71,8 @@ const paths: Record<IconName, ReactNode> = {
   menu: <path d="M4 7h16M4 12h16M4 17h16"/>,
   close: <path d="M6 6l12 12M18 6 6 18"/>,
   folder: <><path d="M3 7h6l2 2h10v10H3z"/><path d="M3 7V5h5l2 2"/></>,
+  eye: <><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"/><circle cx="12" cy="12" r="3"/></>,
+  eyeOff: <><path d="M3 3l18 18"/><path d="M10.6 10.6a2.5 2.5 0 0 0 3.5 3.5"/><path d="M9.9 5.1A10.5 10.5 0 0 1 12 4.5c6.5 0 10 7.5 10 7.5a17.7 17.7 0 0 1-3.1 4.1"/><path d="M6.1 6.1C3.7 7.8 2 12 2 12s3.5 6 10 6c1.2 0 2.3-.2 3.3-.5"/></>,
 };
 
 export function Icon({ name, className = "h-5 w-5", ...props }: { name: IconName; className?: string } & SVGProps<SVGSVGElement>) {

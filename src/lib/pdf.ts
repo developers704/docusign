@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
-import { PDFDocument, StandardFonts, rgb, type PDFImage } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import type { EnvelopeRecord, RecipientRecord, SignatureMethod } from "./types";
 import { formatSignerLocalDate } from "./timezone";
 import { trimSignaturePng } from "./signatureImageTrim";
@@ -54,25 +54,6 @@ function formatEnvelopeCompletedAt(envelope: EnvelopeRecord) {
   );
 }
 
-function drawSignatureImage(
-  page: ReturnType<PDFDocument["addPage"]>,
-  image: PDFImage,
-  centerX: number,
-  baselineY: number
-) {
-  const maxWidth = 220;
-  const maxHeight = 86;
-  const scale = Math.min(maxWidth / image.width, maxHeight / image.height, 1);
-  const width = image.width * scale;
-  const height = image.height * scale;
-  page.drawImage(image, {
-    x: centerX - width / 2,
-    y: baselineY + 10,
-    width,
-    height,
-  });
-}
-
 export async function applyRecipientSignature(
   envelope: EnvelopeRecord,
   recipient: RecipientRecord,
@@ -83,7 +64,6 @@ export async function applyRecipientSignature(
   const pdf = await PDFDocument.load(sourceBytes);
   const regular = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
-  const italic = await pdf.embedFont(StandardFonts.HelveticaOblique);
   const trimmedPng =
     signature.imageFormat === "png" ? trimSignaturePng(signature.imageBytes) : null;
   const signatureBytes = trimmedPng?.bytes || signature.imageBytes;
@@ -193,67 +173,8 @@ export async function applyRecipientSignature(
     }
   }
 
-  const page = pdf.addPage([612, 792]);
-  const navy = rgb(0.06, 0.12, 0.26);
-  const gold = rgb(0.72, 0.58, 0.28);
-  const muted = rgb(0.4, 0.43, 0.48);
-  const ink = rgb(0.1, 0.12, 0.16);
-  const cream = rgb(0.995, 0.99, 0.98);
-
-  page.drawRectangle({ x: 0, y: 0, width: 612, height: 792, color: cream });
-  page.drawRectangle({ x: 22, y: 22, width: 568, height: 748, borderColor: navy, borderWidth: 1.6 });
-  page.drawRectangle({ x: 28, y: 28, width: 556, height: 736, borderColor: gold, borderWidth: 0.9 });
-
-  page.drawRectangle({ x: 40, y: 700, width: 532, height: 52, color: navy });
-  page.drawRectangle({ x: 40, y: 700, width: 532, height: 2.5, color: gold });
-  page.drawText("ELECTRONIC SIGNATURE RECORD", { x: 54, y: 726, size: 15, font: bold, color: rgb(1, 1, 1) });
-  page.drawText(`${safeText(envelope.officeName)}  ·  Envelope ${safeText(envelope.envelopeNumber)}`, {
-    x: 54,
-    y: 710,
-    size: 9,
-    font: regular,
-    color: rgb(0.82, 0.86, 0.92),
-  });
-
-  page.drawText("Document", { x: 48, y: 670, size: 8, font: bold, color: muted });
-  page.drawText(safeText(envelope.title), { x: 48, y: 652, size: 12, font: regular, color: ink, maxWidth: 500 });
-  page.drawText("Signer", { x: 48, y: 620, size: 8, font: bold, color: muted });
-  page.drawText(safeText(recipient.name), { x: 48, y: 602, size: 12, font: regular, color: ink });
-  page.drawText("Email", { x: 318, y: 620, size: 8, font: bold, color: muted });
-  page.drawText(safeText(recipient.email), { x: 318, y: 602, size: 11, font: regular, color: ink, maxWidth: 244 });
-
-  page.drawRectangle({
-    x: 48,
-    y: 270,
-    width: 516,
-    height: 300,
-    color: rgb(1, 1, 1),
-    borderColor: rgb(0.82, 0.84, 0.88),
-    borderWidth: 1,
-  });
-  page.drawText("SIGNATURE", { x: 68, y: 546, size: 9, font: bold, color: muted });
-  const centerX = 306;
-  const lineY = 390;
-  drawSignatureImage(page, signatureImage, centerX, lineY);
-  page.drawLine({ start: { x: 156, y: lineY }, end: { x: 456, y: lineY }, thickness: 1, color: rgb(0.16, 0.18, 0.22) });
-  const nameWidth = regular.widthOfTextAtSize(safeText(recipient.name), 13);
-  page.drawText(safeText(recipient.name), { x: centerX - nameWidth / 2, y: 366, size: 13, font: regular, color: ink });
-  const methodLabel =
-    signature.method === "typed"
-      ? "Typed electronic signature"
-      : signature.method === "uploaded"
-        ? "Uploaded signature image"
-        : "Drawn electronic signature";
-  const methodWidth = italic.widthOfTextAtSize(methodLabel, 9);
-  page.drawText(methodLabel, { x: centerX - methodWidth / 2, y: 348, size: 9, font: italic, color: muted });
-  page.drawText(`Signed: ${formatRecipientSignedAt(recipient, new Date().toISOString())}`, {
-    x: 68,
-    y: 292,
-    size: 9,
-    font: regular,
-    color: muted,
-  });
-
+  // Keep page count identical to the source document — only field ink is applied.
+  // Certificate of Completion is appended once in finalizeEnvelopePdf when everyone has signed.
   const bytes = await pdf.save();
   const workingDirectory = path.join(process.cwd(), "storage", "offices", envelope.officeId, "working");
   await mkdir(workingDirectory, { recursive: true });
@@ -326,7 +247,7 @@ export async function finalizeEnvelopePdf(envelope: EnvelopeRecord) {
   });
 
   // Intro statement
-  page.drawText("This certificate confirms that the following agreement was completed using", {
+  page.drawText("This certificate confirms that the following contract was completed using", {
     x: 48,
     y: 662,
     size: 9,

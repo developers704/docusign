@@ -233,7 +233,7 @@ export default function TemplateRecipientCard({
                         ) : filteredContacts.length === 0 ? (
                           <p className="px-3 py-3 text-center text-[12px] text-[#888]">
                             {contacts.length === 0
-                              ? "No saved contacts yet — they appear after you send agreements."
+                              ? "No saved contacts yet — they appear after you send contracts."
                               : "No match — keep typing or enter a new name."}
                           </p>
                         ) : (
@@ -278,7 +278,7 @@ export default function TemplateRecipientCard({
                         ) : filteredContacts.length === 0 ? (
                           <p className="px-3 py-4 text-center text-[12px] text-[#888]">
                             {contacts.length === 0
-                              ? "No previous customers yet. They appear after you send agreements."
+                              ? "No previous customers yet. They appear after you send contracts."
                               : "No match found."}
                           </p>
                         ) : (

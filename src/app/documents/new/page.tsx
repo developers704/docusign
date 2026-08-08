@@ -78,7 +78,7 @@ export default async function NewDocumentPage({
           <div className="mb-5 rounded border border-[#e0e0e0] bg-white p-5">
             <h2 className="text-lg font-semibold text-[#212121]">Bulk send</h2>
             <p className="mt-1 text-sm text-[#666]">
-              Same document for everyone — each person gets a <strong>separate agreement</strong> in Agreements (with
+              Same document for everyone — each person gets a <strong>separate contract</strong> in Contracts (with
               their name), and their own certificate after they sign.
             </p>
             <p className="mt-3">

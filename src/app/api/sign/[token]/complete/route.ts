@@ -266,6 +266,23 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
     console.error("sign complete: signed email failed", error);
   }
 
+  try {
+    const { dispatchEnvelopeIntegrations } = await import("@/lib/integrationsDispatch");
+    await dispatchEnvelopeIntegrations({
+      officeId: found.envelope.officeId,
+      event: "recipient.signed",
+      envelope: found.envelope,
+      extra: {
+        recipientId: found.recipient.id,
+        recipientName: found.recipient.name,
+        recipientEmail: found.recipient.email,
+        action: actorAction,
+      },
+    });
+  } catch (error) {
+    console.error("sign complete: recipient.signed webhook failed", error);
+  }
+
   const actionLabel = actorAction === "signed" ? "signed" : actorAction === "approved" ? "approved" : "acknowledged";
   await createAppNotification({
     officeId: found.envelope.officeId,
@@ -285,7 +302,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
       officeId: found.envelope.officeId,
       envelopeId: found.envelope.id,
       type: "envelope_completed",
-      title: "Agreement completed",
+      title: "Contract completed",
       message: `"${found.envelope.title}" is fully signed`,
     });
     try {
@@ -336,6 +353,36 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
       await markSubmissionCompletedByEnvelope(found.envelope.id);
     } catch {
       // Non-PowerForm envelopes ignore this.
+    }
+    try {
+      const { dispatchEnvelopeIntegrations } = await import("@/lib/integrationsDispatch");
+      const results = await dispatchEnvelopeIntegrations({
+        officeId: found.envelope.officeId,
+        event: "envelope.completed",
+        envelope: found.envelope,
+        extra: {
+          recipientId: found.recipient.id,
+          recipientName: found.recipient.name,
+          recipientEmail: found.recipient.email,
+        },
+      });
+      // Also try network-level integrations for office envelopes (super-admin setup).
+      if (found.envelope.officeId) {
+        const network = await dispatchEnvelopeIntegrations({
+          officeId: "",
+          event: "envelope.completed",
+          envelope: found.envelope,
+          extra: { recipientId: found.recipient.id },
+        });
+        results.push(...network);
+      }
+      for (const result of results) {
+        if (!result.ok) {
+          console.warn("[integrations]", result.kind, result.detail);
+        }
+      }
+    } catch (error) {
+      console.error("sign complete: integrations dispatch failed", error);
     }
   }
 

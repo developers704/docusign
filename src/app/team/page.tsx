@@ -1,4 +1,5 @@
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import AdminShell from "@/components/AdminShell";
 import TeamWorkspace from "@/components/TeamWorkspace";
 import { canManageOfficeUsers, getSessionOffice, requireAdmin } from "@/lib/auth";
@@ -10,6 +11,10 @@ import {
   writeUsers,
 } from "@/lib/store";
 import type { UserRecord } from "@/lib/types";
+
+function errorRedirect(message: string): never {
+  redirect(`/team?error=${encodeURIComponent(message)}`);
+}
 
 async function inviteMemberAction(formData: FormData) {
   "use server";
@@ -23,16 +28,21 @@ async function inviteMemberAction(formData: FormData) {
     ? (roleValue as UserRecord["role"])
     : "office_user";
 
-  if (!officeId || !canManageOfficeUsers(session, officeId)) return;
-  if (!name || !/^\S+@\S+\.\S+$/.test(email) || password.length < 8) return;
+  if (!officeId || !canManageOfficeUsers(session, officeId)) {
+    errorRedirect("You cannot invite users for this office.");
+  }
+  if (!name || !/^\S+@\S+\.\S+$/.test(email) || password.length < 8) {
+    errorRedirect("Name, valid email, and password (8+ chars) are required.");
+  }
 
   try {
     await createOfficeUser({ officeId, name, email, password, role });
-  } catch {
-    return;
+  } catch (error) {
+    errorRedirect(error instanceof Error ? error.message : "Could not create account.");
   }
   revalidatePath("/team");
   revalidatePath("/offices");
+  redirect("/team?ok=invited");
 }
 
 async function toggleUserAction(formData: FormData) {
@@ -63,7 +73,11 @@ async function resetPasswordAction(formData: FormData) {
   revalidatePath("/offices");
 }
 
-export default async function TeamPage() {
+export default async function TeamPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; ok?: string }>;
+}) {
   const session = await requireAdmin();
   const office = await getSessionOffice(session);
   const allUsers = await readUsers();
@@ -75,9 +89,22 @@ export default async function TeamPage() {
     session.role === "super_admin" ||
     (session.role === "office_admin" && Boolean(session.officeId));
   const defaultOfficeId = session.officeId || offices[0]?.id || "";
+  const params = await searchParams;
+  const flashError = String(params.error || "").trim();
+  const flashOk = String(params.ok || "").trim();
 
   return (
     <AdminShell session={session} office={office}>
+      {flashError ? (
+        <div className="border-b border-red-200 bg-red-50 px-6 py-3 text-sm font-semibold text-red-700">
+          {flashError}
+        </div>
+      ) : null}
+      {flashOk && !flashError ? (
+        <div className="border-b border-emerald-200 bg-emerald-50 px-6 py-3 text-sm font-semibold text-emerald-800">
+          Team member invited.
+        </div>
+      ) : null}
       <TeamWorkspace
         users={users}
         offices={session.role === "super_admin" ? offices : office ? [office] : []}

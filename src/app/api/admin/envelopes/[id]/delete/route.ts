@@ -18,14 +18,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const session = await requireAdminApi();
   if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   if (!canDeleteAgreements(session)) {
-    return NextResponse.json({ error: "Only admins can delete agreements." }, { status: 403 });
+    return NextResponse.json({ error: "Only admins can delete contracts." }, { status: 403 });
   }
 
   const { id } = await params;
   const envelopes = await readEnvelopes();
   const envelope = envelopes.find((item) => item.id === id);
   if (!envelope || !canAccessOffice(session, envelope.officeId)) {
-    return NextResponse.json({ error: "Agreement not found." }, { status: 404 });
+    return NextResponse.json({ error: "Contract not found." }, { status: 404 });
   }
 
   for (const recipient of envelope.recipients) {
@@ -42,10 +42,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     envelopeId: id,
     recipientId: null,
     type: "envelope_deleted",
-    message: `Agreement deleted by ${session.email}: ${envelope.title} (${envelope.envelopeNumber})`,
+    message: `Contract deleted by ${session.email}: ${envelope.title} (${envelope.envelopeNumber})`,
     ipAddress: null,
     userAgent: request.headers.get("user-agent"),
   });
 
-  return NextResponse.json({ message: "Agreement deleted." });
+  return NextResponse.json({ message: "Contract deleted." });
 }

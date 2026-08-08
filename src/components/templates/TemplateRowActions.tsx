@@ -143,7 +143,7 @@ export default function TemplateRowActions({
           <button
             type="submit"
             className="inline-flex h-8 min-w-[64px] items-center justify-center rounded-[2px] bg-[#4c00ff] px-4 text-[13px] font-semibold text-white hover:bg-[#3d00cf]"
-            title="Creates an agreement and publishes this template automatically"
+            title="Creates a contract and publishes this template automatically"
           >
             Use
           </button>

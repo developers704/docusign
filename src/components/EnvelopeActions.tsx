@@ -86,7 +86,7 @@ export default function EnvelopeActions({
 
   function deleteAgreement() {
     const confirmed = window.confirm(
-      "Delete this agreement permanently? Documents and signing links will be removed. This cannot be undone."
+      "Delete this contract permanently? Documents and signing links will be removed. This cannot be undone."
     );
     if (confirmed) run(`/api/admin/envelopes/${envelopeId}/delete`, undefined, "/agreements");
   }
@@ -283,7 +283,7 @@ export default function EnvelopeActions({
             onClick={deleteAgreement}
             className="rounded-lg bg-red-700 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
           >
-            Delete agreement
+            Delete contract
           </button>
         )}
       </div>

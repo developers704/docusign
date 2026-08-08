@@ -11,8 +11,8 @@ const sourceSans = Source_Sans_3({
 });
 
 export const metadata: Metadata = {
-  title: "Valliani Agreements",
-  description: "Secure multi-office electronic signature and agreement workflow platform",
+  title: "Valliani Contracts",
+  description: "Secure multi-office electronic signature and contract workflow platform",
 };
 
 export const viewport: Viewport = {

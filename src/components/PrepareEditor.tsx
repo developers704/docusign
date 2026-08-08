@@ -196,19 +196,34 @@ export default function PrepareEditor({
     function onMove(event: PointerEvent) {
       setGhostPos({ x: event.clientX, y: event.clientY });
     }
+    function cancelPlacement(note = "Placement cancelled.") {
+      setPlaceTool(null);
+      setGhostPos(null);
+      setMessage(note);
+    }
     function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setPlaceTool(null);
-        setGhostPos(null);
-        setMessage("Placement cancelled.");
-      }
+      if (event.key === "Escape") cancelPlacement();
+    }
+    function onPointerDown(event: PointerEvent) {
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+      // Document click places the field (handled by onDocumentPointerDown).
+      if (canvasRef.current?.contains(target)) return;
+      // Field palette / tool buttons: allow switching tools without clearing first.
+      if (target.closest("[data-place-tool]")) return;
+      // Explicit cancel control.
+      if (target.closest("[data-place-cancel]")) return;
+      // Anywhere else (sidebars, header, page chrome) drops the holding field.
+      cancelPlacement();
     }
     window.addEventListener("pointermove", onMove);
     window.addEventListener("keydown", onKey);
+    window.addEventListener("pointerdown", onPointerDown, true);
     document.body.style.cursor = "crosshair";
     return () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("keydown", onKey);
+      window.removeEventListener("pointerdown", onPointerDown, true);
       document.body.style.cursor = "";
     };
   }, [placeTool]);
@@ -262,8 +277,8 @@ export default function PrepareEditor({
     setSelectedId(null);
     setMessage(
       prefill
-        ? `Place pre-fill ${label} for ${recipientMap.get(recipientId)?.name || "signer"}: click on the document.`
-        : `Place ${label}: click on the document. Esc to cancel.`
+        ? `Place pre-fill ${label} for ${recipientMap.get(recipientId)?.name || "signer"} — click the document, or click outside to cancel.`
+        : `Place ${label} — click the document, or click outside to cancel.`
     );
   }
 
@@ -638,7 +653,7 @@ export default function PrepareEditor({
       if (result.syncedBulkCount && result.syncedBulkCount > 0) {
         sessionStorage.setItem(
           "esign_notice",
-          `Signature fields applied to ${result.syncedBulkCount + 1} bulk agreements. Send the others from Agreements when ready.`
+          `Signature fields applied to ${result.syncedBulkCount + 1} bulk contracts. Send the others from Contracts when ready.`
         );
       }
       if (send) {
@@ -707,39 +722,40 @@ export default function PrepareEditor({
   }
 
   return (
-    <div className="flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-[#f6f3f9] text-[#21004c] lg:flex-row">
+    <div className="flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-[#f4f2f7] text-[#2a2040] lg:flex-row">
       {placeTool && ghostPos && (
         <div
-          className="pointer-events-none fixed z-[100] flex flex-col items-center justify-center rounded-md border-2 border-[#4c00ff] bg-[#f0ebff]/90 px-2 text-[10px] font-extrabold text-[#4c00ff] shadow-lg"
+          className="pointer-events-none fixed z-[100] flex flex-col items-center justify-center rounded-xl border border-[#c4b5fd]/80 bg-white/90 px-2.5 py-1.5 text-[10px] font-semibold text-[#5b21b6] shadow-[0_8px_24px_rgba(33,0,76,.12)] backdrop-blur-sm"
           style={{
             left: ghostPos.x,
             top: ghostPos.y,
             width: Math.max(72, placeTool.w * 4),
-            height: Math.max(18, placeTool.h * 5),
+            height: Math.max(22, placeTool.h * 5),
             transform: "translate(-50%, -50%)",
           }}
         >
           <span>{placeTool.label}</span>
-          <span className="text-[8px] opacity-80">{recipientMap.get(recipientId)?.name}</span>
+          <span className="text-[8px] font-medium text-[#7c6b8f]">{recipientMap.get(recipientId)?.name}</span>
         </div>
       )}
 
-      <aside className="hidden w-[280px] shrink-0 overflow-y-auto border-r border-[#e2e8f0] bg-white p-5 lg:block">
-        <p className="text-[11px] font-black uppercase tracking-[.18em] text-[#8f8497]">Standard Fields</p>
-        <p className="mt-2 text-[11px] leading-4 text-[#74697c]">
-          Click a field — it follows your mouse. Click the PDF to place. Fields auto-stack with a gap so they never sit on top of each other. Esc to cancel.
+      <aside className="hidden w-[280px] shrink-0 overflow-y-auto border-r border-[#ebe6f0] bg-white/95 p-5 lg:block">
+        <p className="text-[11px] font-semibold uppercase tracking-[.14em] text-[#8a7f96]">Standard Fields</p>
+        <p className="mt-2 text-[11px] leading-5 text-[#6f657c]">
+          Click a field — it follows your mouse. Click the PDF to place it. Click anywhere outside the document to
+          cancel.
         </p>
 
         <div className="mt-4">
-          <p className="text-xs font-extrabold">Assign new fields to</p>
+          <p className="text-xs font-semibold text-[#2a2040]">Assign new fields to</p>
           {renderSignerRows()}
           {renderSigningOrderSummary(true)}
         </div>
         {recipientId && (
           <p
-            className="mt-2 rounded-lg px-3 py-2 text-[11px] font-bold"
+            className="mt-2 rounded-xl px-3 py-2 text-[11px] font-semibold"
             style={{
-              backgroundColor: `${recipientMap.get(recipientId)?.color}18`,
+              backgroundColor: `${recipientMap.get(recipientId)?.color}14`,
               color: recipientMap.get(recipientId)?.color,
             }}
           >
@@ -748,14 +764,18 @@ export default function PrepareEditor({
         )}
 
         {placeTool && (
-          <div className="mt-3 flex items-center justify-between rounded-lg border border-[#4c00ff] bg-[#f0ebff] px-3 py-2">
-            <span className="text-[11px] font-extrabold text-[#4c00ff]">Holding: {placeTool.label}</span>
+          <div className="mt-3 flex items-center justify-between rounded-xl border border-[#ddd6fe] bg-[#f5f3ff] px-3 py-2.5">
+            <span className="text-[11px] font-semibold text-[#5b21b6]">
+              Holding <span className="font-bold">{placeTool.label}</span>
+            </span>
             <button
               type="button"
-              className="text-[10px] font-bold text-[#4c00ff] underline"
+              data-place-cancel="1"
+              className="rounded-lg px-2 py-1 text-[10px] font-semibold text-[#6d28d9] hover:bg-white"
               onClick={() => {
                 setPlaceTool(null);
                 setGhostPos(null);
+                setMessage("Placement cancelled.");
               }}
             >
               Cancel
@@ -763,46 +783,48 @@ export default function PrepareEditor({
           </div>
         )}
 
-        <div className="mt-3 grid grid-cols-2 gap-1.5">
+        <div className="mt-3 grid grid-cols-2 gap-2">
           {standardPalette.map((item) => {
             const active = placeTool?.type === item.type && !placeTool.prefill;
             return (
               <button
                 key={item.type}
                 type="button"
+                data-place-tool="1"
                 onClick={() => pickTool(item.type, item.label, item.w, item.h, false)}
-                className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg border px-1.5 py-2 text-[10px] font-extrabold ${
+                className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl border px-1.5 py-2 text-[10px] font-semibold transition ${
                   active
-                    ? "border-[#4c00ff] bg-[#f0ebff] text-[#4c00ff] ring-2 ring-[#d8ccff]"
-                    : "border-[#e5dfe8] bg-[#fcfbfd] hover:border-violet-500"
+                    ? "border-[#a78bfa] bg-[#f5f3ff] text-[#5b21b6] shadow-sm"
+                    : "border-[#eee8f3] bg-[#fbfafc] text-[#3d3550] hover:border-[#d8d0e6] hover:bg-white"
                 }`}
               >
-                <Icon name={item.icon} className="h-3.5 w-3.5 text-violet-700" />
+                <Icon name={item.icon} className="h-3.5 w-3.5 text-[#7c6b8f]" />
                 {item.label}
               </button>
             );
           })}
         </div>
 
-        <p className="mt-5 text-[11px] font-black uppercase tracking-[.18em] text-[#8f8497]">Pre-fill Tools</p>
-        <p className="mt-1 text-[10px] leading-4 text-[#74697c]">
+        <p className="mt-5 text-[11px] font-semibold uppercase tracking-[.14em] text-[#8a7f96]">Pre-fill Tools</p>
+        <p className="mt-1 text-[10px] leading-5 text-[#6f657c]">
           You fill these before sending. They go to whoever is selected above.
         </p>
-        <div className="mt-2 grid grid-cols-2 gap-1.5">
+        <div className="mt-2 grid grid-cols-2 gap-2">
           {prefillPalette.map((item) => {
             const active = placeTool?.type === item.type && placeTool.prefill;
             return (
               <button
                 key={`prefill-${item.type}`}
                 type="button"
+                data-place-tool="1"
                 onClick={() => pickTool(item.type, item.label, item.w, item.h, true)}
-                className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg border px-1.5 py-2 text-[10px] font-extrabold ${
+                className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl border px-1.5 py-2 text-[10px] font-semibold transition ${
                   active
-                    ? "border-[#047857] bg-[#ecfdf5] text-[#047857] ring-2 ring-[#bbf7d0]"
-                    : "border-[#e5dfe8] bg-[#fcfbfd] hover:border-emerald-500"
+                    ? "border-[#6ee7b7] bg-[#ecfdf5] text-[#047857] shadow-sm"
+                    : "border-[#eee8f3] bg-[#fbfafc] text-[#3d3550] hover:border-[#d8d0e6] hover:bg-white"
                 }`}
               >
-                <Icon name={item.icon} className="h-3.5 w-3.5 text-emerald-700" />
+                <Icon name={item.icon} className="h-3.5 w-3.5 text-[#7c6b8f]" />
                 {item.label}
               </button>
             );
@@ -946,19 +968,20 @@ export default function PrepareEditor({
         )}
 
         {/* Mobile field palette */}
-        <div className="border-b border-[#e2e8f0] bg-white px-3 py-2 lg:hidden">
-          <p className="mb-2 text-[11px] font-extrabold text-[#21004c]">Assign new fields to</p>
+        <div className="border-b border-[#ebe6f0] bg-white px-3 py-2 lg:hidden">
+          <p className="mb-2 text-[11px] font-semibold text-[#2a2040]">Assign new fields to</p>
           {renderSignerRows(true)}
           <div className="flex gap-1.5 overflow-x-auto pb-1">
             {standardPalette.map((item) => (
               <button
                 key={item.type}
                 type="button"
+                data-place-tool="1"
                 onClick={() => pickTool(item.type, item.label, item.w, item.h, false)}
-                className={`min-h-11 shrink-0 rounded-lg border px-3 text-[11px] font-extrabold ${
+                className={`min-h-11 shrink-0 rounded-xl border px-3 text-[11px] font-semibold ${
                   placeTool?.type === item.type && !placeTool.prefill
-                    ? "border-[#4c00ff] bg-[#f0ebff] text-[#4c00ff]"
-                    : "border-[#e2e8f0] bg-[#f8fafc]"
+                    ? "border-[#a78bfa] bg-[#f5f3ff] text-[#5b21b6]"
+                    : "border-[#eee8f3] bg-[#fbfafc] text-[#3d3550]"
                 }`}
               >
                 {item.label}
@@ -968,19 +991,19 @@ export default function PrepareEditor({
         </div>
 
         <div className="mx-auto w-full max-w-[900px] p-3 sm:p-7">
-          <div className="mb-4 flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm">
+          <div className="mb-4 flex items-center justify-between rounded-2xl border border-[#ebe6f0] bg-white px-4 py-3 shadow-[0_1px_2px_rgba(33,0,76,.04)]">
             <div className="flex items-center gap-2">
-              <button type="button" disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="rounded-lg border px-3 py-1.5 text-xs font-bold disabled:opacity-30">
+              <button type="button" disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="rounded-xl border border-[#ebe6f0] px-3 py-1.5 text-xs font-semibold disabled:opacity-30">
                 Previous
               </button>
-              <span className="text-xs font-extrabold">
+              <span className="text-xs font-semibold">
                 Page {page} of {pageSizes.length}
               </span>
               <button
                 type="button"
                 disabled={page >= pageSizes.length}
                 onClick={() => setPage((p) => p + 1)}
-                className="rounded-lg border px-3 py-1.5 text-xs font-bold disabled:opacity-30"
+                className="rounded-xl border border-[#ebe6f0] px-3 py-1.5 text-xs font-semibold disabled:opacity-30"
               >
                 Next
               </button>
@@ -989,16 +1012,17 @@ export default function PrepareEditor({
           </div>
 
           {placeTool && (
-            <div className="mb-3 rounded-xl border border-[#4c00ff] bg-[#f0ebff] px-4 py-2 text-center text-xs font-extrabold text-[#4c00ff]">
-              Click on the document to place “{placeTool.label}”
+            <div className="mb-3 rounded-2xl border border-[#ddd6fe] bg-[#f8f7fc] px-4 py-2.5 text-center text-xs font-medium text-[#5b21b6]">
+              Click the document to place “{placeTool.label}” · click outside to cancel
             </div>
           )}
 
           <div
             ref={canvasRef}
+            data-prepare-canvas="1"
             onPointerDown={onDocumentPointerDown}
-            className={`relative mx-auto w-full max-w-[760px] overflow-hidden bg-white shadow-2xl ${
-              placeTool ? "cursor-crosshair ring-2 ring-[#4c00ff] ring-offset-2" : ""
+            className={`relative mx-auto w-full max-w-[760px] overflow-hidden rounded-sm bg-white shadow-[0_12px_40px_rgba(33,0,76,.08)] ${
+              placeTool ? "cursor-crosshair ring-2 ring-[#c4b5fd]/70 ring-offset-2 ring-offset-[#f4f2f7]" : ""
             }`}
           >
             <PdfPageCanvas
@@ -1020,9 +1044,9 @@ export default function PrepareEditor({
                     setSelectedId(field.id);
                     if (field.recipientId) setRecipientId(field.recipientId);
                   }}
-                  className={`absolute flex select-none flex-col items-center justify-center overflow-visible rounded-md border-2 px-1 text-[10px] font-extrabold shadow-md ${
+                  className={`absolute flex select-none flex-col items-center justify-center overflow-visible rounded-lg border px-1 text-[10px] font-semibold shadow-[0_2px_8px_rgba(33,0,76,.08)] ${
                     placeTool ? "pointer-events-none" : "cursor-move"
-                  } ${selectedId === field.id ? "ring-4 ring-violet-200" : ""}`}
+                  } ${selectedId === field.id ? "ring-2 ring-[#ddd6fe]" : ""}`}
                   style={{
                     left: `${field.x}%`,
                     top: `${field.y}%`,

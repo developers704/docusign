@@ -557,6 +557,8 @@ export type AppProfileRecord = {
   adminName: string;
   /** Label shown for the office network (header / branding). */
   networkName: string;
+  /** Optional login email override for env-based super admin. */
+  adminEmail?: string;
   /** Optional password override for env-based super admin. */
   adminPasswordSalt?: string;
   adminPasswordHash?: string;

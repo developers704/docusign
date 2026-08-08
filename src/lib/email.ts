@@ -153,9 +153,9 @@ function emailShell(officeName: string, content: string, footerExtra = "") {
               <div style="padding:8px 20px 24px">${content}</div>
               <div style="padding:20px 24px 28px;border-top:1px solid ${LINE};background:#faf8fc">
                 <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:${TEXT}">Do Not Share This Email</p>
-                <p style="margin:0 0 16px;font-size:12px;line-height:1.55;color:${MUTED}">This email contains a secure link to ${escapeHtml(officeName)} Agreements. Please do not share this email, link, or access code with others.</p>
+                <p style="margin:0 0 16px;font-size:12px;line-height:1.55;color:${MUTED}">This email contains a secure link to ${escapeHtml(officeName)} Contracts. Please do not share this email, link, or access code with others.</p>
                 ${footerExtra}
-                <p style="margin:16px 0 0;font-size:11px;color:#b0a6bc">Powered by ${escapeHtml(officeName)} Agreements</p>
+                <p style="margin:16px 0 0;font-size:11px;color:#b0a6bc">Powered by ${escapeHtml(officeName)} Contracts</p>
               </div>
             </td>
           </tr>
@@ -200,9 +200,9 @@ export async function sendSignatureRequestEmail(
       senderEmail: envelope.createdBy?.includes("@") ? envelope.createdBy : undefined,
       bodyHtml: `<p style="margin:0 0 10px">${escapeHtml(recipient.name)},</p><p style="margin:0 0 10px">${messageBody}</p><p style="margin:0">Thank You,<br>${escapeHtml(senderLabel)}</p>`,
     })}`,
-    `<p style="margin:0 0 6px;font-size:13px;font-weight:700;color:${TEXT}">Alternate Signing Method</p><p style="margin:0;font-size:12px;line-height:1.55;color:${MUTED}">Open ${escapeHtml(buildAppUrl("/"))}, go to Agreements, and use envelope ID <strong style="color:${TEXT}">${escapeHtml(envelope.envelopeNumber)}</strong>.</p>`
+    `<p style="margin:0 0 6px;font-size:13px;font-weight:700;color:${TEXT}">Alternate Signing Method</p><p style="margin:0;font-size:12px;line-height:1.55;color:${MUTED}">Open ${escapeHtml(buildAppUrl("/"))}, go to Contracts, and use envelope ID <strong style="color:${TEXT}">${escapeHtml(envelope.envelopeNumber)}</strong>.</p>`
   );
-  return sendMail({ to: recipient.email, subject, text, html });
+  return sendMail({ to: recipient.email, subject, text, html, officeId: envelope.officeId });
 }
 
 /** Notify later-step signers that they are included and will get a signing link when it is their turn. */
@@ -222,7 +222,7 @@ export async function sendSignerQueuedEmail(envelope: EnvelopeRecord, recipient:
       bodyHtml: `<p style="margin:0 0 10px">Hello ${escapeHtml(recipient.name)},</p><p style="margin:0">Your signing step is <strong>${step}</strong>. When earlier recipients finish, you will receive a secure Review Document email.</p>`,
     })}`
   );
-  return sendMail({ to: recipient.email, subject, text, html });
+  return sendMail({ to: recipient.email, subject, text, html, officeId: envelope.officeId });
 }
 
 export async function sendOtpEmail(
@@ -239,7 +239,7 @@ export async function sendOtpEmail(
       bodyHtml: `<p style="margin:0 0 12px">Hello ${escapeHtml(recipient.name)},</p><p style="margin:0 0 16px">Enter this code to continue signing:</p><div style="font-size:28px;letter-spacing:.2em;font-weight:800;background:${BRAND_SOFT};border:1px solid ${LINE};border-radius:8px;padding:18px;text-align:center;color:${BRAND_DARK}">${otp}</div><p style="margin:16px 0 0;color:${MUTED};font-size:12px">The code expires in 10 minutes.</p>`,
     })}`
   );
-  return sendMail({ to: recipient.email, subject, text, html });
+  return sendMail({ to: recipient.email, subject, text, html, officeId: envelope.officeId });
 }
 
 export async function sendCompletionEmail(
@@ -282,6 +282,7 @@ export async function sendCompletionEmail(
     text,
     html,
     attachments,
+    officeId: envelope.officeId,
   });
 }
 
@@ -300,7 +301,7 @@ export async function sendSenderViewedEmail(
       bodyHtml: `<p style="margin:0 0 10px"><strong>${escapeHtml(recipient.name)}</strong> opened your document.</p><p style="margin:0;color:${MUTED}">Envelope: ${escapeHtml(envelope.envelopeNumber)} · ${escapeHtml(envelope.title)}</p>`,
     })}`
   );
-  return sendMail({ to: notifyEmails, subject, text, html });
+  return sendMail({ to: notifyEmails, subject, text, html, officeId: envelope.officeId });
 }
 
 export async function sendSenderSignedEmail(
@@ -324,5 +325,25 @@ export async function sendSenderSignedEmail(
       bodyHtml: `<p style="margin:0">Has <strong>${escapeHtml(actionLabel)}</strong> <strong>${escapeHtml(envelope.title)}</strong>.</p>`,
     })
   );
-  return sendMail({ to: unique, subject, text, html });
+  return sendMail({ to: unique, subject, text, html, officeId: envelope.officeId });
+}
+
+export async function sendLoginOtpEmail(input: {
+  to: string;
+  name: string;
+  otp: string;
+  officeId?: string | null;
+  officeName?: string;
+}) {
+  const brand = input.officeName || "Valliani Contracts";
+  const subject = `Your sign-in code for ${brand}`;
+  const text = `Hello ${input.name},\n\nYour verification code is ${input.otp}. It expires in 10 minutes.\n\nIf you did not try to sign in, ignore this email.`;
+  const html = emailShell(
+    brand,
+    `${detailCard({
+      senderName: brand,
+      bodyHtml: `<p style="margin:0 0 12px">Hello ${escapeHtml(input.name)},</p><p style="margin:0 0 16px">Enter this code to finish signing in:</p><div style="font-size:28px;letter-spacing:.2em;font-weight:800;background:${BRAND_SOFT};border:1px solid ${LINE};border-radius:8px;padding:18px;text-align:center;color:${BRAND_DARK}">${escapeHtml(input.otp)}</div><p style="margin:16px 0 0;color:${MUTED};font-size:12px">The code expires in 10 minutes.</p>`,
+    })}`
+  );
+  return sendMail({ to: input.to, subject, text, html, officeId: input.officeId });
 }

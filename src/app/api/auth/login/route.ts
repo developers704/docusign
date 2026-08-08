@@ -5,6 +5,8 @@ import {
   sessionDurationSeconds,
   verifyCredentials,
 } from "@/lib/auth";
+import { sendLoginOtpEmail } from "@/lib/email";
+import { createLoginOtpChallenge, createSecureToken, getOfficeById } from "@/lib/store";
 
 function cookieSecureFromRequest(requestUrl?: string) {
   if (process.env.COOKIE_SECURE === "true") return true;
@@ -12,6 +14,38 @@ function cookieSecureFromRequest(requestUrl?: string) {
   if (requestUrl?.startsWith("https://")) return true;
   const appUrl = process.env.APP_URL || "";
   return appUrl.startsWith("https://");
+}
+
+function maskEmail(email: string) {
+  const [local, domain] = email.split("@");
+  if (!local || !domain) return email;
+  const visible = local.slice(0, Math.min(2, local.length));
+  return `${visible}${"*".repeat(Math.max(1, local.length - visible.length))}@${domain}`;
+}
+
+function setSessionCookie(
+  response: NextResponse,
+  session: { userId: string; email: string; name: string; role: string; officeId: string | null },
+  remember: boolean,
+  requestUrl?: string
+) {
+  response.cookies.set(
+    sessionCookieName,
+    createSessionToken({
+      userId: session.userId,
+      email: session.email,
+      name: session.name,
+      role: session.role as "super_admin" | "office_admin" | "office_user" | "viewer",
+      officeId: session.officeId,
+    }),
+    {
+      httpOnly: true,
+      secure: cookieSecureFromRequest(requestUrl),
+      sameSite: "lax",
+      path: "/",
+      maxAge: remember ? 60 * 60 * 24 * 30 : sessionDurationSeconds,
+    }
+  );
 }
 
 export async function POST(request: Request) {
@@ -23,6 +57,7 @@ export async function POST(request: Request) {
   }
   const email = String(body.email || "").trim().slice(0, 254);
   const password = String(body.password || "");
+  const remember = Boolean(body.remember);
   if (!email || !password || password.length > 256) {
     return NextResponse.json({ error: "Enter a valid email address and password." }, { status: 400 });
   }
@@ -39,24 +74,45 @@ export async function POST(request: Request) {
   if (!session) {
     return NextResponse.json({ error: "Invalid email or password, or the office account is inactive." }, { status: 401 });
   }
-  const response = NextResponse.json({ success: true, role: session.role });
-  response.cookies.set(
-    sessionCookieName,
-    createSessionToken({
+
+  // Super admin skips email OTP. Portal users must verify a code sent to their email.
+  if (session.role === "super_admin") {
+    const response = NextResponse.json({ success: true, role: session.role });
+    setSessionCookie(response, session, remember, request.url);
+    return response;
+  }
+
+  const otp = createSecureToken().slice(0, 6).toUpperCase();
+  const challenge = await createLoginOtpChallenge({
+    pendingSession: {
       userId: session.userId,
       email: session.email,
       name: session.name,
       role: session.role,
       officeId: session.officeId,
-    }),
-    {
-      httpOnly: true,
-      // HTTP IP/VPS: secure cookies would never save — only require secure on HTTPS.
-      secure: cookieSecureFromRequest(request.url),
-      sameSite: "lax",
-      path: "/",
-      maxAge: body.remember ? 60 * 60 * 24 * 30 : sessionDurationSeconds,
-    }
-  );
-  return response;
+    },
+    remember,
+    otp,
+  });
+
+  const office = session.officeId ? await getOfficeById(session.officeId) : null;
+  const mail = await sendLoginOtpEmail({
+    to: session.email,
+    name: session.name,
+    otp,
+    officeId: session.officeId,
+    officeName: office?.name,
+  });
+  if (!mail.sent) {
+    return NextResponse.json(
+      { error: mail.reason || "Could not send verification code. Check office or network SMTP settings." },
+      { status: 503 }
+    );
+  }
+
+  return NextResponse.json({
+    requiresOtp: true,
+    challengeId: challenge.id,
+    maskedEmail: maskEmail(session.email),
+  });
 }

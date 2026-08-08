@@ -520,7 +520,7 @@ export default function CreateTemplateForm({
                 </button>
               </div>
               <p className="mb-4 text-[13px] text-[#666]">
-                Name and email saved here become defaults when you use this template for an agreement — you can still edit them there.
+                Name and email saved here become defaults when you use this template for a contract — you can still edit them there.
               </p>
               <div className="space-y-4">
                 {recipients.map((recipient, index) => (

@@ -7,7 +7,7 @@ import type { UserRole } from "@/lib/types";
 
 const primary: Array<{ href: string; label: string; icon: IconName; hideFor?: UserRole[] }> = [
   { href: "/", label: "Home", icon: "home" },
-  { href: "/agreements", label: "Agreements", icon: "agreement" },
+  { href: "/agreements", label: "Contracts", icon: "agreement" },
   { href: "/templates", label: "Templates", icon: "template" },
   { href: "/workflows", label: "Workflows", icon: "workflow", hideFor: ["viewer"] },
 ];

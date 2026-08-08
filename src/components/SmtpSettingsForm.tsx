@@ -8,7 +8,7 @@ type ServerAction = (formData: FormData) => Promise<void>;
 
 type SmtpStatus = {
   configured: boolean;
-  source: "settings" | "environment" | "none";
+  source: "settings" | "environment" | "office" | "none";
   provider: "custom" | "gmail";
   host: string;
   port: number;
@@ -36,10 +36,12 @@ export default function SmtpSettingsForm({
   status,
   defaultTestEmail,
   saveAction,
+  officeId,
 }: {
   status: SmtpStatus;
   defaultTestEmail: string;
   saveAction: ServerAction;
+  officeId?: string;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -66,7 +68,7 @@ export default function SmtpSettingsForm({
       setPort(String(GMAIL_PRESET.port));
       setSecure(GMAIL_PRESET.secure);
       if (!from.trim() && user.trim()) {
-        setFrom(`Valliani Agreements <${user.trim()}>`);
+        setFrom(`Valliani Contracts <${user.trim()}>`);
       }
     }
   }
@@ -115,11 +117,13 @@ export default function SmtpSettingsForm({
       >
         <strong>{status.configured ? "SMTP is configured" : "SMTP is not configured"}</strong>
         <p className="mt-1 text-sm">
-          {status.source === "settings"
-            ? `Using ${status.provider === "gmail" ? "Gmail" : "custom"} SMTP saved in Settings (overrides environment variables).`
-            : status.source === "environment"
-              ? "Using cPanel / .env environment variables. Save below to manage from this page instead."
-              : "Choose Gmail or your domain mailbox below — no backend file edit required."}
+          {status.source === "office"
+            ? `Using ${status.provider === "gmail" ? "Gmail" : "custom"} SMTP saved for this office portal.`
+            : status.source === "settings"
+              ? `Using ${status.provider === "gmail" ? "Gmail" : "custom"} SMTP saved in Settings (overrides environment variables).`
+              : status.source === "environment"
+                ? "Using cPanel / .env environment variables. Save below to manage from this page instead."
+                : "Choose Gmail or your domain mailbox below — no backend file edit required."}
         </p>
         {status.updatedAt ? (
           <p className="mt-1 text-xs opacity-80">Last saved: {new Date(status.updatedAt).toLocaleString()}</p>
@@ -169,6 +173,7 @@ export default function SmtpSettingsForm({
       </div>
 
       <form onSubmit={onSubmit} className="grid gap-4 md:grid-cols-2">
+        {officeId ? <input type="hidden" name="officeId" value={officeId} /> : null}
         <input type="hidden" name="provider" value={provider} />
         <div>
           <label className="mb-1 block text-xs font-semibold text-[#6b6578]">SMTP host</label>
@@ -213,7 +218,7 @@ export default function SmtpSettingsForm({
               const next = event.target.value;
               setUser(next);
               if (provider === "gmail" && (!from || from.includes("@gmail.com") || from.includes(user))) {
-                setFrom(next.includes("@") ? `Valliani Agreements <${next.trim()}>` : from);
+                setFrom(next.includes("@") ? `Valliani Contracts <${next.trim()}>` : from);
               }
             }}
             required
@@ -245,7 +250,7 @@ export default function SmtpSettingsForm({
             name="fromName"
             value={fromName}
             onChange={(event) => setFromName(event.target.value)}
-            placeholder="e.g. Valliani Agreements"
+            placeholder="e.g. Valliani Contracts"
             className="h-10 w-full rounded-md border border-[#c8c8d3] px-3 text-sm outline-none focus:border-[#21004c]"
           />
           <p className="mt-1 text-[11px] text-[#6b6578]">Emails appear as: From Name &lt;address&gt;</p>
@@ -287,7 +292,7 @@ export default function SmtpSettingsForm({
         {message ? <p className="text-sm font-medium text-emerald-700 md:col-span-2">{message}</p> : null}
       </form>
 
-      {status.configured ? <SmtpTestForm defaultEmail={defaultTestEmail} /> : null}
+      {status.configured ? <SmtpTestForm defaultEmail={defaultTestEmail} officeId={officeId} /> : null}
     </div>
   );
 }

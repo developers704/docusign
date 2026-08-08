@@ -283,20 +283,20 @@ export default function HomeDashboard({
               )}
             </div>
           ) : (
-            <p className="mt-4 text-sm text-[#666]">Your role can view agreements but cannot send new ones.</p>
+            <p className="mt-4 text-sm text-[#666]">Your role can view contracts but cannot send new ones.</p>
           )}
         </div>
 
         <section className="mt-10 sm:mt-12">
           <div className="flex items-center gap-2">
-            <h2 className="text-[20px] font-normal text-[#212121] sm:text-[22px]">Agreement activity</h2>
+            <h2 className="text-[20px] font-normal text-[#212121] sm:text-[22px]">Contract activity</h2>
             <Icon name="help" className="h-4 w-4 text-[#666]" />
           </div>
 
           <div className="mt-4 divide-y divide-[#e6e6ec] border-t border-[#e6e6ec]">
             {activity.length === 0 ? (
               <p className="py-12 text-center text-[14px] text-[#666]">
-                No agreement activity yet. Start your first envelope to see updates here.
+                No contract activity yet. Start your first envelope to see updates here.
               </p>
             ) : (
               activity.map((item) => <HomeActivityRow key={item.id} item={item} canCreate={canCreate} />)

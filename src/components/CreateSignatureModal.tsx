@@ -47,12 +47,15 @@ function storageKey(userEmail: string) {
 }
 
 function nameInitials(name: string) {
-  return name
+  const parts = name
+    .trim()
     .split(/\s+/)
     .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() || "")
-    .join("");
+    .map((part) => part.replace(/[^A-Za-z\u00C0-\u024F]/g, ""))
+    .filter(Boolean);
+  if (!parts.length) return "";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0] || ""}${parts[parts.length - 1][0] || ""}`.toUpperCase();
 }
 
 /** Transparent PNG + dark ink, cropped tight so it sits next to the avatar */
@@ -124,10 +127,14 @@ export default function CreateSignatureModal({
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     ensureSignatureFontsLoaded();
-    // Always seed modal with this profile's name when no per-user signature yet
+    const seededName = (existing?.fullName || defaultName || "").trim();
+    const seededInitials = (existing?.initials || "").trim() || nameInitials(seededName || defaultName);
     if (!existing) {
       setFullName(defaultName);
       setInitials(nameInitials(defaultName));
+    } else if (!String(existing.initials || "").trim()) {
+      setFullName(seededName || defaultName);
+      setInitials(seededInitials);
     }
     return () => {
       document.body.style.overflow = previous;
@@ -235,7 +242,7 @@ export default function CreateSignatureModal({
               </span>
               <input
                 value={initials}
-                onChange={(event) => setInitials(event.target.value)}
+                onChange={(event) => setInitials(event.target.value.toUpperCase().slice(0, 4))}
                 maxLength={6}
                 className="h-11 w-full rounded-[2px] border border-[#c6c6c6] px-3 text-[15px] outline-none focus:border-[#4c00ff]"
               />

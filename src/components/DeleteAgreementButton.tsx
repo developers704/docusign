@@ -24,7 +24,7 @@ export default function DeleteAgreementButton({
       const response = await fetch(`/api/admin/envelopes/${envelopeId}/delete`, { method: "POST" });
       const result = (await response.json()) as { error?: string };
       if (!response.ok) {
-        window.alert(result.error || "Could not delete agreement.");
+        window.alert(result.error || "Could not delete contract.");
         return;
       }
       router.refresh();

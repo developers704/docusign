@@ -20,8 +20,8 @@ export default function SigningOrderToggle({
           <span className="block text-sm font-semibold text-[#2b2038]">Set signing order</span>
           <span className="mt-1 block text-xs leading-5 text-[#776c80]">
             {enabled
-              ? "Recipients will receive the agreement in this order."
-              : "Recipients will receive the agreement at the same time."}
+              ? "Recipients will receive the contract in this order."
+              : "Recipients will receive the contract at the same time."}
           </span>
         </span>
       </label>

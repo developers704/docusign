@@ -39,7 +39,7 @@ export default async function WebFormsPage({
           <div>
             <h1 className="text-[28px] font-semibold tracking-[-.01em]">Web Forms</h1>
             <p className="mt-2 text-[14px] text-[#666]">
-              Online forms that collect signer details, then start the agreement.
+              Online forms that collect signer details, then start the contract.
             </p>
           </div>
           {session.role !== "viewer" ? (

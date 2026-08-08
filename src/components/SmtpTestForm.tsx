@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 
-export default function SmtpTestForm({ defaultEmail }: { defaultEmail: string }) {
+export default function SmtpTestForm({
+  defaultEmail,
+  officeId,
+}: {
+  defaultEmail: string;
+  officeId?: string;
+}) {
   const [to, setTo] = useState(defaultEmail);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -16,7 +22,7 @@ export default function SmtpTestForm({ defaultEmail }: { defaultEmail: string })
       const response = await fetch("/api/admin/smtp-test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to }),
+        body: JSON.stringify({ to, officeId }),
       });
       const result = (await response.json()) as { error?: string; message?: string; detail?: string };
       if (!response.ok) {

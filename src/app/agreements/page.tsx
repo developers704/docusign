@@ -8,6 +8,9 @@ function filterEnvelopes(envelopes: EnvelopeRecord[], view: string) {
   if (view === "waiting") return envelopes.filter((item) => ["sent", "viewed"].includes(item.status));
   if (view === "scheduled") return envelopes.filter((item) => item.status === "scheduled");
   if (view === "sent") return envelopes.filter((item) => Boolean(item.sentAt));
+  if (view === "viewed") {
+    return envelopes.filter((item) => item.recipients.some((recipient) => Boolean(recipient.viewedAt)));
+  }
   if (view === "completed") return envelopes.filter((item) => item.status === "completed");
   if (view === "draft") return envelopes.filter((item) => item.status === "draft");
   if (view === "action") return envelopes.filter((item) => item.status === "draft" || ["sent", "viewed"].includes(item.status));
@@ -28,11 +31,12 @@ function pageTitle(view: string) {
   if (view === "waiting") return "Waiting for others";
   if (view === "scheduled") return "Scheduled";
   if (view === "sent") return "Sent";
+  if (view === "viewed") return "Viewed";
   if (view === "completed") return "Completed";
   if (view === "draft") return "Drafts";
   if (view === "action") return "Action required";
   if (view === "expiring") return "Expiring soon";
-  return "All agreements";
+  return "All contracts";
 }
 
 export default async function AgreementsPage({

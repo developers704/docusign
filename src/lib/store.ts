@@ -40,6 +40,8 @@ const POWERFORM_ANALYTICS_FILE = path.join(DATA_DIRECTORY, "powerform-analytics.
 const WEBFORMS_FILE = path.join(DATA_DIRECTORY, "webforms.json");
 const TEMPLATE_FOLDERS_FILE = path.join(DATA_DIRECTORY, "template-folders.json");
 const SMTP_SETTINGS_FILE = path.join(DATA_DIRECTORY, "smtp-settings.json");
+const OFFICE_SMTP_DIR = path.join(DATA_DIRECTORY, "office-smtp");
+const LOGIN_OTP_FILE = path.join(DATA_DIRECTORY, "login-otp.json");
 const NOTIFICATIONS_FILE = path.join(DATA_DIRECTORY, "notifications.json");
 const APP_PROFILE_FILE = path.join(DATA_DIRECTORY, "app-profile.json");
 
@@ -132,6 +134,33 @@ export function slugifyOfficeName(value: string) {
     .slice(0, 50);
 }
 
+export async function getReservedLoginEmails() {
+  const profile = await readAppProfile();
+  const emails = new Set<string>();
+  const envAdmin = String(process.env.ADMIN_EMAIL || "").trim().toLowerCase();
+  const profileAdmin = String(profile.adminEmail || "").trim().toLowerCase();
+  if (envAdmin) emails.add(envAdmin);
+  if (profileAdmin) emails.add(profileAdmin);
+  return emails;
+}
+
+/** One email = one login account across the whole network. */
+export async function assertEmailAvailable(email: string, excludeUserId?: string) {
+  const normalized = email.trim().toLowerCase();
+  if (!/^\S+@\S+\.\S+$/.test(normalized)) {
+    throw new Error("Enter a valid email address.");
+  }
+  const reserved = await getReservedLoginEmails();
+  if (reserved.has(normalized)) {
+    throw new Error("This email already exists.");
+  }
+  const users = await readUsers();
+  if (users.some((user) => user.id !== excludeUserId && user.email.toLowerCase() === normalized)) {
+    throw new Error("This email already exists.");
+  }
+  return normalized;
+}
+
 export async function createOfficeWithAdmin(input: {
   officeName: string;
   slug?: string;
@@ -145,17 +174,14 @@ export async function createOfficeWithAdmin(input: {
 }) {
   const offices = await readOffices();
   const users = await readUsers();
-  const normalizedEmail = input.adminEmail.trim().toLowerCase();
-  const desiredSlug = slugifyOfficeName(input.slug || input.officeName) || `office-${offices.length + 1}`;
+  const normalizedEmail = await assertEmailAvailable(input.adminEmail);
+  // Slug always from office name (create form no longer collects a separate slug).
+  const desiredSlug = slugifyOfficeName(input.officeName) || `office-${offices.length + 1}`;
   let slug = desiredSlug;
   let suffix = 2;
   while (offices.some((office) => office.slug === slug)) {
     slug = `${desiredSlug}-${suffix}`;
     suffix += 1;
-  }
-
-  if (users.some((user) => user.email.toLowerCase() === normalizedEmail)) {
-    throw new Error("A portal account with this email already exists.");
   }
 
   const now = new Date().toISOString();
@@ -164,7 +190,7 @@ export async function createOfficeWithAdmin(input: {
     id: officeId,
     name: input.officeName.trim(),
     slug,
-    email: (input.officeEmail || "").trim(),
+    email: (input.officeEmail || normalizedEmail).trim(),
     phone: (input.phone || "").trim(),
     address: (input.address || "").trim(),
     brandColor: (input.brandColor || "#21004c").trim() || "#21004c",
@@ -244,6 +270,13 @@ export async function deleteOfficeWorkspace(officeId: string) {
     // Storage cleanup is best-effort.
   }
 
+  try {
+    const { unlink } = await import("node:fs/promises");
+    await unlink(path.join(OFFICE_SMTP_DIR, `${officeId}.json`));
+  } catch {
+    // Office SMTP file may not exist.
+  }
+
   return { ok: true as const, office };
 }
 
@@ -257,10 +290,7 @@ export async function createOfficeUser(input: {
   const office = await getOfficeById(input.officeId);
   if (!office) throw new Error("Office not found.");
   const users = await readUsers();
-  const email = input.email.trim().toLowerCase();
-  if (users.some((user) => user.email.toLowerCase() === email)) {
-    throw new Error("A portal account with this email already exists.");
-  }
+  const email = await assertEmailAvailable(input.email);
   const now = new Date().toISOString();
   const credentials = createPasswordHash(input.password);
   const user: UserRecord = {
@@ -304,6 +334,17 @@ export async function updateUserName(userId: string, name: string) {
   return user;
 }
 
+export async function updateUserEmail(userId: string, email: string) {
+  const users = await readUsers();
+  const user = users.find((item) => item.id === userId);
+  if (!user) throw new Error("Portal account not found.");
+  const normalized = await assertEmailAvailable(email, userId);
+  user.email = normalized;
+  user.updatedAt = new Date().toISOString();
+  await writeUsers(users);
+  return user;
+}
+
 export async function readAppProfile(): Promise<AppProfileRecord> {
   const fallback: AppProfileRecord = {
     adminName: process.env.ADMIN_NAME || "Network Administrator",
@@ -317,6 +358,7 @@ export async function readAppProfile(): Promise<AppProfileRecord> {
     return {
       adminName: String(parsed.adminName || fallback.adminName).trim() || fallback.adminName,
       networkName: String(parsed.networkName || fallback.networkName).trim() || fallback.networkName,
+      adminEmail: parsed.adminEmail ? String(parsed.adminEmail).trim().toLowerCase() : undefined,
       adminPasswordSalt: parsed.adminPasswordSalt ? String(parsed.adminPasswordSalt) : undefined,
       adminPasswordHash: parsed.adminPasswordHash ? String(parsed.adminPasswordHash) : undefined,
       updatedAt: String(parsed.updatedAt || ""),
@@ -644,6 +686,137 @@ export async function writeSmtpSettings(settings: SmtpSettingsRecord) {
       "Could not write SMTP settings. On cPanel run: mkdir -p ~/company-esign/data && chmod 755 ~/company-esign/data"
     );
   }
+}
+
+function officeSmtpFile(officeId: string) {
+  return path.join(OFFICE_SMTP_DIR, `${officeId}.json`);
+}
+
+/** Per-office SMTP (used for outbound mail from that portal). Falls back to global when unset. */
+export async function readOfficeSmtpSettings(officeId: string): Promise<SmtpSettingsRecord | null> {
+  if (!officeId) return null;
+  try {
+    const content = await readFile(officeSmtpFile(officeId), "utf8");
+    const parsed = JSON.parse(content) as Partial<SmtpSettingsRecord>;
+    if (!parsed || typeof parsed !== "object") return null;
+    return normalizeSmtpRecord(parsed);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    console.error("[smtp] office JSON read failed:", officeId, error);
+    return null;
+  }
+}
+
+export async function readOfficeSmtpSettingsDraft(officeId: string): Promise<Partial<SmtpSettingsRecord> | null> {
+  const full = await readOfficeSmtpSettings(officeId);
+  if (full) return full;
+  try {
+    const content = await readFile(officeSmtpFile(officeId), "utf8");
+    const parsed = JSON.parse(content) as Partial<SmtpSettingsRecord>;
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function writeOfficeSmtpSettings(officeId: string, settings: SmtpSettingsRecord) {
+  if (!officeId) throw new Error("Office id is required.");
+  await mkdir(OFFICE_SMTP_DIR, { recursive: true });
+  await enqueueWrite(() => atomicWrite(officeSmtpFile(officeId), settings));
+}
+
+export type LoginOtpChallenge = {
+  id: string;
+  email: string;
+  pendingSession: {
+    userId: string;
+    email: string;
+    name: string;
+    role: UserRecord["role"];
+    officeId: string | null;
+  };
+  otpHash: string;
+  expiresAt: string;
+  remember: boolean;
+  attemptCount: number;
+  createdAt: string;
+};
+
+async function readLoginOtpChallenges(): Promise<LoginOtpChallenge[]> {
+  try {
+    const content = await readFile(LOGIN_OTP_FILE, "utf8");
+    const parsed = JSON.parse(content) as LoginOtpChallenge[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+async function writeLoginOtpChallenges(challenges: LoginOtpChallenge[]) {
+  await enqueueWrite(() => atomicWrite(LOGIN_OTP_FILE, challenges));
+}
+
+export async function createLoginOtpChallenge(input: {
+  pendingSession: LoginOtpChallenge["pendingSession"];
+  remember: boolean;
+  otp: string;
+  ttlMinutes?: number;
+}): Promise<LoginOtpChallenge> {
+  const now = Date.now();
+  const ttl = (input.ttlMinutes ?? 10) * 60 * 1000;
+  const challenges = (await readLoginOtpChallenges()).filter(
+    (item) => new Date(item.expiresAt).getTime() > now
+  );
+  const challenge: LoginOtpChallenge = {
+    id: crypto.randomUUID(),
+    email: input.pendingSession.email,
+    pendingSession: input.pendingSession,
+    otpHash: hashToken(input.otp.trim().toUpperCase()),
+    expiresAt: new Date(now + ttl).toISOString(),
+    remember: input.remember,
+    attemptCount: 0,
+    createdAt: new Date(now).toISOString(),
+  };
+  challenges.push(challenge);
+  await writeLoginOtpChallenges(challenges);
+  return challenge;
+}
+
+export async function verifyLoginOtpChallenge(input: {
+  challengeId: string;
+  otp: string;
+}): Promise<{ ok: true; challenge: LoginOtpChallenge } | { ok: false; error: string }> {
+  const now = Date.now();
+  const challenges = await readLoginOtpChallenges();
+  const index = challenges.findIndex((item) => item.id === input.challengeId);
+  if (index < 0) return { ok: false, error: "Verification code expired. Sign in again." };
+  const challenge = challenges[index];
+  if (new Date(challenge.expiresAt).getTime() <= now) {
+    challenges.splice(index, 1);
+    await writeLoginOtpChallenges(challenges);
+    return { ok: false, error: "Verification code expired. Sign in again." };
+  }
+  if (challenge.attemptCount >= 5) {
+    challenges.splice(index, 1);
+    await writeLoginOtpChallenges(challenges);
+    return { ok: false, error: "Too many attempts. Sign in again." };
+  }
+  if (!timingSafeHashEqual(challenge.otpHash, hashToken(input.otp.trim().toUpperCase()))) {
+    challenge.attemptCount += 1;
+    challenges[index] = challenge;
+    await writeLoginOtpChallenges(challenges);
+    return { ok: false, error: "Incorrect verification code." };
+  }
+  challenges.splice(index, 1);
+  await writeLoginOtpChallenges(challenges.filter((item) => new Date(item.expiresAt).getTime() > now));
+  return { ok: true, challenge };
+}
+
+function timingSafeHashEqual(a: string, b: string) {
+  const left = Buffer.from(a);
+  const right = Buffer.from(b);
+  if (left.length !== right.length) return false;
+  return crypto.timingSafeEqual(left, right);
 }
 
 export function hashToken(value: string) {

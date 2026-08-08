@@ -2,7 +2,8 @@ import { readFile } from "node:fs/promises";
 import net from "node:net";
 import tls from "node:tls";
 import path from "node:path";
-import { readSmtpSettings } from "./store";
+import { readOfficeSmtpSettings, readSmtpSettings } from "./store";
+import type { SmtpSettingsRecord } from "./types";
 
 type Attachment = {
   filename: string;
@@ -17,6 +18,8 @@ type MailOptions = {
   html?: string;
   from?: string;
   attachments?: Attachment[];
+  /** When set, prefer that office's SMTP; fall back to global / env. */
+  officeId?: string | null;
 };
 
 type SmtpConfig = {
@@ -54,22 +57,28 @@ function configFromEnv(): SmtpConfig | null {
   };
 }
 
-/** Settings UI values win over cPanel/.env when a complete SMTP profile is saved. */
-export async function resolveSmtpConfig(): Promise<SmtpConfig | null> {
-  const saved = await readSmtpSettings();
-  if (saved) {
-    const port = Number(saved.port) || 465;
-    const startTlsPorts = new Set([25, 587, 2525, 2587]);
-    return {
-      host: saved.host,
-      port,
-      secure: startTlsPorts.has(port) ? false : port === 465 ? true : Boolean(saved.secure),
-      user: saved.user,
-      pass: saved.pass,
-      from: saved.from,
-      fromName: saved.fromName,
-    };
+function configFromRecord(saved: SmtpSettingsRecord): SmtpConfig {
+  const port = Number(saved.port) || 465;
+  const startTlsPorts = new Set([25, 587, 2525, 2587]);
+  return {
+    host: saved.host,
+    port,
+    secure: startTlsPorts.has(port) ? false : port === 465 ? true : Boolean(saved.secure),
+    user: saved.user,
+    pass: saved.pass,
+    from: saved.from,
+    fromName: saved.fromName,
+  };
+}
+
+/** Prefer office SMTP, then Settings global SMTP, then env. */
+export async function resolveSmtpConfig(officeId?: string | null): Promise<SmtpConfig | null> {
+  if (officeId) {
+    const officeSaved = await readOfficeSmtpSettings(officeId);
+    if (officeSaved) return configFromRecord(officeSaved);
   }
+  const saved = await readSmtpSettings();
+  if (saved) return configFromRecord(saved);
   const env = configFromEnv();
   if (!env) return null;
   return {
@@ -78,12 +87,34 @@ export async function resolveSmtpConfig(): Promise<SmtpConfig | null> {
   };
 }
 
-export async function isEmailConfigured() {
-  return Boolean(await resolveSmtpConfig());
+export async function isEmailConfigured(officeId?: string | null) {
+  return Boolean(await resolveSmtpConfig(officeId));
 }
 
 /** Safe summary for Settings page (never returns the password). */
-export async function getSmtpPublicStatus() {
+export async function getSmtpPublicStatus(officeId?: string | null) {
+  if (officeId) {
+    const officeSaved = await readOfficeSmtpSettings(officeId);
+    const host = officeSaved?.host || "";
+    const provider =
+      officeSaved?.provider === "gmail" || host.toLowerCase().includes("gmail.com")
+        ? ("gmail" as const)
+        : ("custom" as const);
+    return {
+      configured: Boolean(officeSaved),
+      source: officeSaved ? ("office" as const) : ("none" as const),
+      provider,
+      host,
+      port: officeSaved?.port || 465,
+      secure: officeSaved?.secure ?? true,
+      user: officeSaved?.user || "",
+      from: officeSaved?.from || "",
+      fromName: officeSaved?.fromName || "",
+      hasPassword: Boolean(officeSaved?.pass),
+      updatedAt: officeSaved?.updatedAt || "",
+    };
+  }
+
   const saved = await readSmtpSettings();
   const env = configFromEnv();
   const active = saved || env;
@@ -157,7 +188,7 @@ async function createMimeMessage(config: SmtpConfig, options: MailOptions) {
     `Date: ${new Date().toUTCString()}`,
     `Message-ID: <${Date.now()}.${Math.random().toString(16).slice(2)}@${senderDomain(fromEmail)}>`,
     "MIME-Version: 1.0",
-    "X-Mailer: Valliani Agreements",
+    "X-Mailer: Valliani Contracts",
     "Auto-Submitted: auto-generated",
   ];
 
@@ -412,7 +443,7 @@ async function sendSmtpWithPortFallback(config: SmtpConfig, options: MailOptions
 }
 
 export async function sendMail(options: MailOptions): Promise<MailResult> {
-  const config = await resolveSmtpConfig();
+  const config = await resolveSmtpConfig(options.officeId);
   if (!config) {
     return { sent: false, reason: "SMTP is not configured." };
   }
@@ -443,14 +474,15 @@ export async function sendMail(options: MailOptions): Promise<MailResult> {
 }
 
 /** Sends a plain test message — used by Settings to verify inbox delivery. */
-export async function sendSmtpTestEmail(to: string) {
-  const config = await resolveSmtpConfig();
+export async function sendSmtpTestEmail(to: string, officeId?: string | null) {
+  const config = await resolveSmtpConfig(officeId);
   if (!config) return { sent: false, reason: "SMTP is not configured." };
   const result = await sendMail({
     to,
-    subject: `Valliani Agreements SMTP test (${new Date().toLocaleString()})`,
-    text: `This is a test email from Valliani Agreements.\n\nSMTP host: ${config.host}\nFrom: ${config.from}\nTime: ${new Date().toISOString()}\n\nIf you received this, outbound email is working.`,
-    html: `<p>This is a test email from <strong>Valliani Agreements</strong>.</p><p>SMTP host: ${config.host}<br/>From: ${config.from}<br/>Time: ${new Date().toISOString()}</p><p>If you received this, outbound email is working.</p>`,
+    officeId,
+    subject: `Valliani Contracts SMTP test (${new Date().toLocaleString()})`,
+    text: `This is a test email from Valliani Contracts.\n\nSMTP host: ${config.host}\nFrom: ${config.from}\nTime: ${new Date().toISOString()}\n\nIf you received this, outbound email is working.`,
+    html: `<p>This is a test email from <strong>Valliani Contracts</strong>.</p><p>SMTP host: ${config.host}<br/>From: ${config.from}<br/>Time: ${new Date().toISOString()}</p><p>If you received this, outbound email is working.</p>`,
   });
   if (!result.sent) return result;
   return {

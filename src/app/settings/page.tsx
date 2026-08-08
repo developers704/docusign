@@ -7,25 +7,82 @@ import {
   getOfficeById,
   readAppProfile,
   readOffices,
+  readOfficeSmtpSettings,
   readSmtpSettings,
+  readUsers,
+  updateUserEmail,
   updateUserName,
   updateUserPassword,
   writeAppProfile,
+  writeOfficeSmtpSettings,
   writeOffices,
   writeSmtpSettings,
 } from "@/lib/store";
 import { getSmtpPublicStatus } from "@/lib/smtp";
 import type { SmtpSettingsRecord } from "@/lib/types";
 
+function buildSmtpSettingsFromForm(
+  formData: FormData,
+  existingPass: string | undefined,
+  defaultFromName?: string
+): SmtpSettingsRecord {
+  const host = String(formData.get("host") || "").trim();
+  const user = String(formData.get("user") || "").trim();
+  const from = String(formData.get("from") || "").trim() || user;
+  const fromName = String(formData.get("fromName") || "").trim();
+  const port = Number(formData.get("port") || "465") || 465;
+  const secure = String(formData.get("secure") || "") === "1";
+  const providerRaw = String(formData.get("provider") || "").trim().toLowerCase();
+  const provider: SmtpSettingsRecord["provider"] =
+    providerRaw === "gmail" || host.toLowerCase().includes("gmail.com") ? "gmail" : "custom";
+  let pass = String(formData.get("pass") || "");
+
+  if (!host || !user || !from) {
+    throw new Error("SMTP host, username, and from address are required.");
+  }
+
+  if (!pass) {
+    pass = existingPass || process.env.SMTP_PASS || "";
+  }
+  pass = pass.trim();
+  if (!pass) {
+    throw new Error("Enter the mailbox password (do not leave blank on first save).");
+  }
+
+  const startTlsPorts = new Set([25, 587, 2525, 2587]);
+  const resolvedSecure =
+    provider === "gmail"
+      ? !startTlsPorts.has(port)
+      : port === 465
+        ? true
+        : startTlsPorts.has(port)
+          ? false
+          : secure;
+
+  return {
+    provider,
+    host: provider === "gmail" ? "smtp.gmail.com" : host,
+    port: provider === "gmail" && ![465, 587].includes(port) ? 465 : port,
+    secure: resolvedSecure,
+    user,
+    pass,
+    from,
+    fromName: fromName || defaultFromName || undefined,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
 async function updateAccountAction(formData: FormData) {
   "use server";
   const session = await requireAdmin();
   const name = String(formData.get("name") || "").trim();
+  const loginEmail = String(formData.get("email") || "").trim().toLowerCase();
   const networkName = String(formData.get("networkName") || "").trim();
   const newPassword = String(formData.get("newPassword") || "");
   const confirmPassword = String(formData.get("confirmPassword") || "");
 
   if (!name) throw new Error("Name is required.");
+  if (!/^\S+@\S+\.\S+$/.test(loginEmail)) throw new Error("Enter a valid login email.");
   if (newPassword && newPassword.length < 8) {
     throw new Error("Password must be at least 8 characters.");
   }
@@ -35,9 +92,14 @@ async function updateAccountAction(formData: FormData) {
 
   if (session.role === "super_admin") {
     const profile = await readAppProfile();
+    const users = await readUsers();
+    if (users.some((user) => user.email.toLowerCase() === loginEmail)) {
+      throw new Error("This email already exists.");
+    }
     const next = {
       ...profile,
       adminName: name.slice(0, 120),
+      adminEmail: loginEmail,
       networkName: (networkName || profile.networkName || "Valliani Network").slice(0, 120),
       updatedAt: new Date().toISOString(),
     };
@@ -57,16 +119,22 @@ async function updateAccountAction(formData: FormData) {
     await refreshSessionCookie({
       ...session,
       name: next.adminName,
+      email: loginEmail,
     });
   } else {
     if (session.userId === "environment-super-admin") {
       throw new Error("Account cannot be updated.");
     }
+    if (session.role === "viewer") {
+      throw new Error("Viewers cannot change login details.");
+    }
     await updateUserName(session.userId, name);
+    await updateUserEmail(session.userId, loginEmail);
     if (newPassword) await updateUserPassword(session.userId, newPassword);
     await refreshSessionCookie({
       ...session,
       name: name.slice(0, 120),
+      email: loginEmail,
     });
   }
 
@@ -96,57 +164,30 @@ async function updateOfficeAction(formData: FormData) {
 async function saveSmtpAction(formData: FormData) {
   "use server";
   const session = await requireAdmin();
-  if (session.role !== "super_admin") {
-    throw new Error("Only the network administrator can change SMTP settings.");
+  if (session.role === "viewer") {
+    throw new Error("Viewers cannot change SMTP settings.");
   }
 
-  const host = String(formData.get("host") || "").trim();
-  const user = String(formData.get("user") || "").trim();
-  const from = String(formData.get("from") || "").trim() || user;
-  const fromName = String(formData.get("fromName") || "").trim();
-  const port = Number(formData.get("port") || "465") || 465;
-  const secure = String(formData.get("secure") || "") === "1";
-  const providerRaw = String(formData.get("provider") || "").trim().toLowerCase();
-  const provider: SmtpSettingsRecord["provider"] =
-    providerRaw === "gmail" || host.toLowerCase().includes("gmail.com") ? "gmail" : "custom";
-  let pass = String(formData.get("pass") || "");
+  const officeId = String(formData.get("officeId") || "").trim();
+  const wantsOfficeSmtp = Boolean(officeId);
 
-  if (!host || !user || !from) {
-    throw new Error("SMTP host, username, and from address are required.");
-  }
-
-  if (!pass) {
+  if (wantsOfficeSmtp) {
+    if (!canAccessOffice(session, officeId)) {
+      throw new Error("You cannot edit SMTP for this office.");
+    }
+    const existing = await readOfficeSmtpSettings(officeId);
+    const settings = buildSmtpSettingsFromForm(formData, existing?.pass, session.name);
+    await writeOfficeSmtpSettings(officeId, settings);
+  } else {
+    if (session.role !== "super_admin") {
+      throw new Error("Only the network administrator can change global SMTP settings.");
+    }
     const existing = await readSmtpSettings();
-    pass = existing?.pass || process.env.SMTP_PASS || "";
-  }
-  pass = pass.trim();
-  if (!pass) {
-    throw new Error("Enter the mailbox password (do not leave blank on first save).");
+    const profile = await readAppProfile();
+    const settings = buildSmtpSettingsFromForm(formData, existing?.pass, profile.adminName);
+    await writeSmtpSettings(settings);
   }
 
-  const startTlsPorts = new Set([25, 587, 2525, 2587]);
-  const resolvedSecure =
-    provider === "gmail"
-      ? !startTlsPorts.has(port)
-      : port === 465
-        ? true
-        : startTlsPorts.has(port)
-          ? false
-          : secure;
-
-  const profile = await readAppProfile();
-  const settings: SmtpSettingsRecord = {
-    provider,
-    host: provider === "gmail" ? "smtp.gmail.com" : host,
-    port: provider === "gmail" && ![465, 587].includes(port) ? 465 : port,
-    secure: resolvedSecure,
-    user,
-    pass,
-    from,
-    fromName: fromName || profile.adminName || undefined,
-    updatedAt: new Date().toISOString(),
-  };
-  await writeSmtpSettings(settings);
   revalidatePath("/settings");
   revalidatePath("/integrations");
 }
@@ -158,11 +199,20 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const allOffices = session.role === "super_admin" ? await readOffices() : currentOffice ? [currentOffice] : [];
   const selectedOffice = session.role === "super_admin" && params.office ? await getOfficeById(params.office) : currentOffice;
   const smtpStatus = await getSmtpPublicStatus();
+  const officeSmtpStatus = selectedOffice ? await getSmtpPublicStatus(selectedOffice.id) : null;
   const profile = await readAppProfile();
   const canEditOffice =
     Boolean(selectedOffice) &&
     ["super_admin", "office_admin"].includes(session.role) &&
     canAccessOffice(session, selectedOffice!.id);
+  const canEditAccount = session.role !== "viewer";
+  const loginEmailDefault =
+    session.role === "super_admin"
+      ? profile.adminEmail || process.env.ADMIN_EMAIL || session.email
+      : session.email;
+  const canEditSmtp = session.role !== "viewer";
+  const canEditOfficeSmtp =
+    canEditSmtp && Boolean(selectedOffice) && canAccessOffice(session, selectedOffice!.id);
 
   return (
     <AdminShell session={session} office={currentOffice}>
@@ -177,63 +227,72 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         <section className="rounded-md border border-[#e6e6ec] bg-white p-6">
           <h2 className="text-lg font-semibold text-[#21004c]">My account</h2>
           <p className="mt-1 text-sm text-[#6b6578]">
-            Change your display name{session.role === "super_admin" ? " and network label" : ""}. Emails use your name
-            as the sender. You can also reset your login password here.
+            Change the name, login email, and password you use to sign in
+            {session.role === "super_admin" ? ", plus the network label" : ""}.
           </p>
-          <form action={updateAccountAction} className="mt-5 grid gap-4 md:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-[#6b6578]">Your name</label>
-              <input
-                name="name"
-                defaultValue={session.name}
-                required
-                className="h-10 w-full rounded-md border border-[#c8c8d3] px-3 text-sm outline-none focus:border-[#21004c]"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-[#6b6578]">Login email</label>
-              <input
-                value={session.email}
-                readOnly
-                className="h-10 w-full rounded-md border border-[#c8c8d3] bg-[#f6f3f9] px-3 text-sm text-[#6b6578]"
-              />
-            </div>
-            {session.role === "super_admin" ? (
-              <div className="md:col-span-2">
-                <label className="mb-1 block text-xs font-semibold text-[#6b6578]">Office network name</label>
+          {canEditAccount ? (
+            <form action={updateAccountAction} className="mt-5 grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-[#6b6578]">Your name</label>
                 <input
-                  name="networkName"
-                  defaultValue={profile.networkName}
+                  name="name"
+                  defaultValue={session.name}
                   required
                   className="h-10 w-full rounded-md border border-[#c8c8d3] px-3 text-sm outline-none focus:border-[#21004c]"
                 />
-                <p className="mt-1 text-[11px] text-[#6b6578]">Shown in the header under your name (e.g. All offices / network label).</p>
               </div>
-            ) : null}
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-[#6b6578]">New password</label>
-              <input
-                name="newPassword"
-                type="password"
-                autoComplete="new-password"
-                placeholder="Leave blank to keep current"
-                className="h-10 w-full rounded-md border border-[#c8c8d3] px-3 text-sm outline-none focus:border-[#21004c]"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-[#6b6578]">Confirm new password</label>
-              <input
-                name="confirmPassword"
-                type="password"
-                autoComplete="new-password"
-                placeholder="Repeat new password"
-                className="h-10 w-full rounded-md border border-[#c8c8d3] px-3 text-sm outline-none focus:border-[#21004c]"
-              />
-            </div>
-            <button className="h-10 rounded-md bg-[#4c00ff] px-4 text-sm font-bold text-white md:col-span-2">
-              Save account
-            </button>
-          </form>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-[#6b6578]">Login email</label>
+                <input
+                  name="email"
+                  type="email"
+                  defaultValue={loginEmailDefault}
+                  required
+                  className="h-10 w-full rounded-md border border-[#c8c8d3] px-3 text-sm outline-none focus:border-[#21004c]"
+                />
+                <p className="mt-1 text-[11px] text-[#6b6578]">Use this email the next time you sign in.</p>
+              </div>
+              {session.role === "super_admin" ? (
+                <div className="md:col-span-2">
+                  <label className="mb-1 block text-xs font-semibold text-[#6b6578]">Office network name</label>
+                  <input
+                    name="networkName"
+                    defaultValue={profile.networkName}
+                    required
+                    className="h-10 w-full rounded-md border border-[#c8c8d3] px-3 text-sm outline-none focus:border-[#21004c]"
+                  />
+                  <p className="mt-1 text-[11px] text-[#6b6578]">
+                    Shown in the header under your name (e.g. All offices / network label).
+                  </p>
+                </div>
+              ) : null}
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-[#6b6578]">New password</label>
+                <input
+                  name="newPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder="Leave blank to keep current"
+                  className="h-10 w-full rounded-md border border-[#c8c8d3] px-3 text-sm outline-none focus:border-[#21004c]"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-[#6b6578]">Confirm new password</label>
+                <input
+                  name="confirmPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder="Repeat new password"
+                  className="h-10 w-full rounded-md border border-[#c8c8d3] px-3 text-sm outline-none focus:border-[#21004c]"
+                />
+              </div>
+              <button className="h-10 rounded-md bg-[#4c00ff] px-4 text-sm font-bold text-white md:col-span-2">
+                Save account
+              </button>
+            </form>
+          ) : (
+            <p className="mt-4 text-sm text-[#6b6578]">Viewers cannot change login email or password.</p>
+          )}
         </section>
 
         {session.role === "super_admin" && allOffices.length > 0 && (
@@ -264,7 +323,9 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           <section className="mt-6 rounded-md border border-[#e6e6ec] bg-white p-6">
             <h2 className="text-lg font-semibold text-[#21004c]">Office portal profile</h2>
             <p className="mt-1 text-sm text-[#6b6578]">
-              This identity appears in the office portal, emails, and signing certificates.
+              {canEditOffice
+                ? "Edit this office portal name, contact details, and branding. Changes show in the portal, emails, and signing certificates."
+                : "This identity appears in the office portal, emails, and signing certificates."}
             </p>
             {canEditOffice ? (
               <form action={updateOfficeAction} className="mt-5 grid gap-4 md:grid-cols-2">
@@ -345,8 +406,13 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           <p className="mt-1 text-sm text-[#6b6578]">
             Choose <strong>Custom / cPanel</strong> or <strong>Gmail SMTP</strong>. Set <strong>From name</strong> so
             inboxes show your name, not only the address.
+            {session.role === "super_admin" && !selectedOffice
+              ? " This is the network fallback mailbox used when an office has no SMTP of its own."
+              : " Documents sent from this portal use this mailbox; if unset, network SMTP is used."}
           </p>
-          {session.role === "super_admin" ? (
+
+          {/* Super admin (no office open): only network SMTP. Office open / office user: only that office SMTP. */}
+          {session.role === "super_admin" && !selectedOffice ? (
             <>
               <SmtpSettingsForm status={smtpStatus} defaultTestEmail={session.email} saveAction={saveSmtpAction} />
               <details className="mt-6">
@@ -366,10 +432,34 @@ REQUIRE_EMAIL_OTP=false`}</pre>
                 </p>
               </details>
             </>
+          ) : canEditOfficeSmtp && selectedOffice && officeSmtpStatus ? (
+            <div className="mt-4">
+              <p className="text-sm font-semibold text-[#21004c]">{selectedOffice.name} mailbox</p>
+              <p className="mt-1 text-sm text-[#6b6578]">
+                Leave unset to fall back to network SMTP.
+                {session.role === "super_admin" ? (
+                  <>
+                    {" "}
+                    <a href="/settings" className="font-semibold text-[#4c00ff] hover:underline">
+                      Back to network SMTP
+                    </a>
+                  </>
+                ) : null}
+              </p>
+              <SmtpSettingsForm
+                status={officeSmtpStatus}
+                defaultTestEmail={session.email}
+                saveAction={saveSmtpAction}
+                officeId={selectedOffice.id}
+              />
+            </div>
+          ) : !canEditSmtp ? (
+            <p className="mt-4 text-sm text-[#6b6578]">Viewers cannot change email delivery settings.</p>
           ) : (
             <p className="mt-4 text-sm text-[#6b6578]">
-              Only the network administrator can view or change SMTP credentials.
-              {smtpStatus.configured ? " Email delivery is currently configured on this server." : ""}
+              {session.role === "super_admin"
+                ? "Select an office above and click Open settings to edit that office’s SMTP."
+                : "Select or open your office profile to configure SMTP."}
             </p>
           )}
         </section>

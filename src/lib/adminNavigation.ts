@@ -18,7 +18,7 @@ export type SideNavGroup = {
 
 export const topNavItems: Array<{ section: AdminNavSection; label: string; href: string }> = [
   { section: "home", label: "Home", href: "/" },
-  { section: "agreements", label: "Agreements", href: "/agreements" },
+  { section: "agreements", label: "Contracts", href: "/agreements" },
   { section: "templates", label: "Templates", href: "/templates" },
   { section: "reports", label: "Reports", href: "/reports" },
   { section: "admin", label: "Admin", href: "/offices" },
@@ -29,8 +29,8 @@ export const sectionSideNav: Record<AdminNavSection, SideNavGroup[]> = {
     {
       items: [
         { href: "/", label: "Overview", icon: "home" },
-        { href: "/agreements", label: "Agreement activity", icon: "agreement" },
-        { href: "/documents/new", label: "Start agreement", icon: "send", hideFor: ["viewer"] },
+        { href: "/agreements", label: "Contract activity", icon: "agreement" },
+        { href: "/documents/new", label: "Start contract", icon: "send", hideFor: ["viewer"] },
       ],
     },
   ],
@@ -38,7 +38,7 @@ export const sectionSideNav: Record<AdminNavSection, SideNavGroup[]> = {
     {
       title: "Envelopes",
       items: [
-        { href: "/agreements", label: "All agreements", icon: "agreement" },
+        { href: "/agreements", label: "All contracts", icon: "agreement" },
         { href: "/agreements?view=waiting", label: "Waiting for others", icon: "clock" },
         { href: "/agreements?view=scheduled", label: "Scheduled", icon: "calendar" },
         { href: "/agreements?view=sent", label: "Sent", icon: "send" },

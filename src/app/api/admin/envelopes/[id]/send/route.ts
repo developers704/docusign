@@ -84,7 +84,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     await writeEnvelopes(envelopes);
     const message =
       bulkSent > 0
-        ? `${result.message} Also sent ${bulkSent} other agreement${bulkSent === 1 ? "" : "s"} from this bulk send.`
+        ? `${result.message} Also sent ${bulkSent} other contract${bulkSent === 1 ? "" : "s"} from this bulk send.`
         : result.message;
     return NextResponse.json({ message, scheduled: false, bulkSent });
   } catch (error) {

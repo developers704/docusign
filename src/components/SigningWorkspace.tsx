@@ -35,12 +35,15 @@ function isFullSignatureField(field: DocumentField) {
 }
 
 function nameInitials(name: string) {
-  return name
+  const parts = name
+    .trim()
     .split(/\s+/)
     .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() || "")
-    .join("");
+    .map((part) => part.replace(/[^A-Za-z\u00C0-\u024F]/g, ""))
+    .filter(Boolean);
+  if (!parts.length) return "";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0] || ""}${parts[parts.length - 1][0] || ""}`.toUpperCase();
 }
 
 export default function SigningWorkspace({
@@ -126,6 +129,15 @@ export default function SigningWorkspace({
       return next;
     });
   }, [fields, signerName, maskedEmail, signerPhone]);
+
+  useEffect(() => {
+    if (!showAdoptModal) return;
+    const name = (fullName.trim() || signerName).trim();
+    if (name && !fullName.trim()) setFullName(name);
+    setInitials((current) => current.trim() || nameInitials(name));
+    // Intentionally only when the adopt modal opens / signer name arrives.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showAdoptModal, signerName]);
 
   const apiToken = encodeURIComponent(token);
   const selectedStyle = STYLE_FONTS.find((item) => item.id === typedStyleId) || STYLE_FONTS[0];
@@ -241,6 +253,13 @@ export default function SigningWorkspace({
     setActiveFieldId(field.id);
     setMessage("");
     if (isSignatureField(field)) {
+      setFullName((current) => current.trim() || signerName);
+      setInitials((current) => {
+        const fromSigner = nameInitials(signerName);
+        const fromCurrentName = nameInitials(fullName.trim() || signerName);
+        if (!current.trim()) return fromCurrentName || fromSigner;
+        return current;
+      });
       setShowAdoptModal(true);
       padRef.current?.clear();
       return;
@@ -307,7 +326,7 @@ export default function SigningWorkspace({
     setAdoptedInitials(initialsInk);
     setShowAdoptModal(false);
     // Consent must stay unchecked until the signer ticks it at the end.
-    setMessage("Signature applied. Scroll to the end, check the agreement box, then Finish.");
+    setMessage("Signature applied. Scroll to the end, check the contract box, then Finish.");
     if (activeFieldId) {
       const el = document.getElementById(`doc-field-${activeFieldId}`);
       el?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -327,7 +346,7 @@ export default function SigningWorkspace({
       return;
     }
     if (!consent) {
-      setMessage("Please check the agreement box to continue.");
+      setMessage("Please check the contract box to continue.");
       document.getElementById("sign-consent")?.scrollIntoView({ behavior: "smooth", block: "center" });
       document.getElementById("sign-consent-check")?.focus();
       return;

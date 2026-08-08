@@ -21,7 +21,7 @@ export default async function WorkflowsPage() {
     },
     {
       title: "Manager approval",
-      detail: "Route an agreement for internal approval before signature.",
+      detail: "Route a contract for internal approval before signature.",
       steps: "Prepare → Approve → Send → Complete",
       status: "Draft",
     },
@@ -41,7 +41,7 @@ export default async function WorkflowsPage() {
             <p className="text-sm font-semibold text-[#6b6578]">Automation</p>
             <h1 className="mt-1 text-[32px] font-normal tracking-[-.02em] text-[#21004c]">Workflows</h1>
             <p className="mt-2 text-sm text-[#6b6578]">
-              Build repeatable agreement processes with approvals, signing order and notifications.
+              Build repeatable contract processes with approvals, signing order and notifications.
             </p>
           </div>
           <button className="inline-flex items-center justify-center gap-2 rounded-md bg-[#21004c] px-4 py-2.5 text-sm font-bold text-white">
@@ -59,7 +59,7 @@ export default async function WorkflowsPage() {
                 <Icon name="sparkle" className="h-3.5 w-3.5" />
                 Workflow builder
               </span>
-              <h2 className="mt-4 text-2xl font-extrabold text-[#21004c]">Automate the steps around every agreement</h2>
+              <h2 className="mt-4 text-2xl font-extrabold text-[#21004c]">Automate the steps around every contract</h2>
               <p className="mt-2 text-sm leading-6 text-[#6b6578]">
                 Set recipient roles, approvals, reminders, expiration rules and completion actions once, then reuse the
                 process across offices.

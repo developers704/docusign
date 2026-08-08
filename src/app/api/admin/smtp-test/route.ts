@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdminApi } from "@/lib/auth";
+import { canAccessOffice, requireAdminApi } from "@/lib/auth";
 import { isEmailConfigured, sendSmtpTestEmail } from "@/lib/smtp";
 
 export async function POST(request: Request) {
@@ -7,16 +7,20 @@ export async function POST(request: Request) {
   if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   if (session.role === "viewer") return NextResponse.json({ error: "Not allowed." }, { status: 403 });
 
-  const body = (await request.json().catch(() => ({}))) as { to?: string };
+  const body = (await request.json().catch(() => ({}))) as { to?: string; officeId?: string };
   const to = String(body.to || session.email || "").trim();
+  const officeId = String(body.officeId || "").trim() || null;
   if (!to || !to.includes("@")) {
     return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
   }
-  if (!(await isEmailConfigured())) {
+  if (officeId && !canAccessOffice(session, officeId)) {
+    return NextResponse.json({ error: "Not allowed for this office." }, { status: 403 });
+  }
+  if (!(await isEmailConfigured(officeId))) {
     return NextResponse.json({ error: "SMTP is not configured on this server." }, { status: 400 });
   }
 
-  const result = await sendSmtpTestEmail(to);
+  const result = await sendSmtpTestEmail(to, officeId);
   if (!result.sent) {
     return NextResponse.json({ error: result.reason || "SMTP test failed." }, { status: 502 });
   }

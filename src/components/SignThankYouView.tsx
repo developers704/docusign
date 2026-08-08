@@ -54,7 +54,7 @@ export default function SignThankYouView({
         <div className="mx-auto flex h-16 max-w-3xl items-center justify-between px-5 sm:px-8">
           <div className="flex items-center gap-3">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl brand-gradient text-[10px] font-black text-white shadow-lg shadow-violet-200/60">
-              VA
+              VC
             </span>
             <div>
               <p className="text-sm font-extrabold tracking-tight">{officeName}</p>
@@ -114,7 +114,7 @@ export default function SignThankYouView({
                   className="mx-auto mt-3 max-w-lg text-sm leading-relaxed sm:text-[15px]"
                   style={{ color: "rgba(255,255,255,0.9)" }}
                 >
-                  {recipientName}, your electronic signature has been securely recorded for this agreement.
+                  {recipientName}, your electronic signature has been securely recorded for this contract.
                   You can close this window whenever you&apos;re ready.
                 </p>
               </div>
@@ -122,7 +122,7 @@ export default function SignThankYouView({
 
             <div className="space-y-6 px-6 py-8 sm:px-10">
               <div className="rounded-2xl border border-[#eee9f1] bg-[#faf8fc] p-5">
-                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#9a90a3]">Agreement</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#9a90a3]">Contract</p>
                 <h2 className="mt-1 text-lg font-extrabold text-[#1c1230]">{title}</h2>
                 <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
                   <div>
@@ -149,7 +149,7 @@ export default function SignThankYouView({
               <div className="rounded-2xl border border-emerald-100 bg-emerald-50/80 px-5 py-4">
                 <p className="text-sm font-bold text-emerald-950">
                   {envelopeCompleted
-                    ? "All required parties have finished. This agreement is complete."
+                    ? "All required parties have finished. This contract is complete."
                     : "Your step is done. Other recipients may still need to finish their part."}
                 </p>
                 <p className="mt-1 text-xs leading-5 text-emerald-900/75">
@@ -182,7 +182,7 @@ export default function SignThankYouView({
                   <p className="text-sm font-bold text-[#1c1230]">Legally recorded e-signature</p>
                   <p className="mt-0.5 text-xs leading-5 text-[#6d647a]">
                     Your action was captured with a secure audit trail — including time, signer identity, and
-                    document integrity — through Valliani Agreements.
+                    document integrity — through Valliani Contracts.
                   </p>
                 </div>
               </div>
@@ -190,7 +190,7 @@ export default function SignThankYouView({
           </div>
 
           <p className="mt-8 text-center text-xs text-[#958a9f]">
-            Powered by <span className="font-bold text-[#675c71]">valliani agreements</span>
+            Powered by <span className="font-bold text-[#675c71]">valliani contracts</span>
           </p>
         </div>
       </div>

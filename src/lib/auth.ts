@@ -41,8 +41,9 @@ export async function verifyCredentials(email: string, password: string): Promis
   const configuredPassword = process.env.ADMIN_PASSWORD || "ChangeMe123!";
   const normalizedEmail = email.trim().toLowerCase();
   const profile = await readAppProfile();
+  const superAdminEmail = (profile.adminEmail || configuredEmail).trim().toLowerCase();
 
-  if (timingSafeTextEqual(normalizedEmail, configuredEmail.toLowerCase())) {
+  if (timingSafeTextEqual(normalizedEmail, superAdminEmail)) {
     let passwordOk = false;
     if (profile.adminPasswordSalt && profile.adminPasswordHash) {
       passwordOk = verifyPassword(password, profile.adminPasswordSalt, profile.adminPasswordHash);
@@ -52,7 +53,7 @@ export async function verifyCredentials(email: string, password: string): Promis
     if (passwordOk) {
       return {
         userId: "environment-super-admin",
-        email: normalizedEmail,
+        email: superAdminEmail,
         name: profile.adminName || process.env.ADMIN_NAME || "Network Administrator",
         role: "super_admin",
         officeId: null,
@@ -126,6 +127,7 @@ export async function getAppSession() {
     return {
       ...session,
       name: profile.adminName || session.name,
+      email: profile.adminEmail || process.env.ADMIN_EMAIL || session.email,
     };
   }
 

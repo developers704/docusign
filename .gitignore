@@ -30,3 +30,7 @@ storage/offices/*/signed/*
 data/templates.json
 runtime-backup/
 storage/offices/*/templates/*
+
+data/app-profile.json
+data/login-otp.json
+data/office-smtp/

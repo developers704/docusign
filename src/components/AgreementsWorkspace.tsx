@@ -113,7 +113,7 @@ export default function AgreementsWorkspace({
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search agreements and recipients"
+              placeholder="Search contracts and recipients"
               className="h-10 w-full rounded-[2px] border border-[#c6c6c6] bg-white pl-10 pr-3 text-[15px] outline-none placeholder:text-[#666] focus:border-[#4c00ff]"
             />
           </div>
@@ -192,7 +192,7 @@ export default function AgreementsWorkspace({
               </select>
             </label>
             <p className="text-[12px] text-[#666]">
-              Showing {filtered.length} of {envelopes.length} agreements
+              Showing {filtered.length} of {envelopes.length} contracts
             </p>
           </div>
         )}
@@ -200,13 +200,13 @@ export default function AgreementsWorkspace({
 
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center px-6 py-24 text-center">
-          <h2 className="text-xl font-semibold text-[#000]">No agreements match these filters</h2>
+          <h2 className="text-xl font-semibold text-[#000]">No contracts match these filters</h2>
           <p className="mt-2 max-w-md text-sm text-[#666]">
-            Try clearing filters or create a new agreement from Start.
+            Try clearing filters or create a new contract from Start.
           </p>
           {canCreate && (
             <Link href="/documents/new" className="mt-6 rounded-[2px] bg-[#4c00ff] px-5 py-2.5 text-sm font-bold text-white">
-              Start agreement
+              Start contract
             </Link>
           )}
           {hasFilters && (
@@ -276,7 +276,7 @@ export default function AgreementsWorkspace({
               <thead>
                 <tr className="border-b border-[#e5e5e5] text-[12px] font-semibold text-[#666]">
                   <th className="px-6 py-3">
-                    <input type="checkbox" aria-label="Select all agreements" className="accent-[#4c00ff]" />
+                    <input type="checkbox" aria-label="Select all contracts" className="accent-[#4c00ff]" />
                   </th>
                   <th className="px-3 py-3">Name</th>
                   <th className="px-4 py-3">Status</th>

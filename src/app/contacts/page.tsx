@@ -29,7 +29,7 @@ export default async function ContactsPage() {
           <div>
             <p className="text-sm font-semibold text-[#6b6578]">Directory</p>
             <h1 className="mt-1 text-[32px] font-normal tracking-[-.02em] text-[#21004c]">Contacts</h1>
-            <p className="mt-2 text-sm text-[#6b6578]">A shared recipient directory built from agreement activity.</p>
+            <p className="mt-2 text-sm text-[#6b6578]">A shared recipient directory built from contract activity.</p>
           </div>
           <button className="inline-flex h-10 items-center gap-2 rounded-md bg-[#21004c] px-4 text-sm font-bold text-white">
             <Icon name="plus" className="h-4 w-4" />
@@ -56,7 +56,7 @@ export default async function ContactsPage() {
           <thead>
             <tr className="border-b border-[#e6e6ec] text-[11px] font-bold uppercase tracking-[.08em] text-[#6b6578]">
               <th className="px-6 py-3">Contact</th>
-              <th className="px-4 py-3">Agreements</th>
+              <th className="px-4 py-3">Contracts</th>
               <th className="px-4 py-3">Last activity</th>
               <th className="px-4 py-3">Verification</th>
               <th className="px-6 py-3 text-right">Action</th>
@@ -66,7 +66,7 @@ export default async function ContactsPage() {
             {contacts.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-6 py-20 text-center text-sm text-[#6b6578]">
-                  Contacts will appear after recipients are added to agreements.
+                  Contacts will appear after recipients are added to contracts.
                 </td>
               </tr>
             ) : (

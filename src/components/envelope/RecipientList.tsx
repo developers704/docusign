@@ -165,7 +165,7 @@ export default function RecipientList({
       {bulkMode && (
         <div className="flex flex-wrap items-center gap-3">
           <p className="text-[13px] text-[#666]">
-            Add everyone who should receive a copy. Each name becomes a separate agreement in your list.
+            Add everyone who should receive a copy. Each name becomes a separate contract in your list.
           </p>
           <Link href="/documents/new" className="text-[13px] font-semibold text-[#4c00ff] hover:underline">
             Exit bulk send

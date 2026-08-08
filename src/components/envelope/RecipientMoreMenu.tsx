@@ -140,7 +140,7 @@ export default function RecipientMoreMenu({
                     />
                   </label>
                   <p className="text-[11px] leading-5 text-[#817687]">
-                    Recipients with the same order number receive the agreement at the same time.
+                    Recipients with the same order number receive the contract at the same time.
                   </p>
                 </div>
               )}

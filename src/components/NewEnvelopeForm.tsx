@@ -105,7 +105,7 @@ export default function NewEnvelopeForm({
       ? `Complete with Valliani: ${editEnvelope.title}`
       : initialTemplate
         ? `Complete with Valliani: ${initialTemplate.title}`
-        : "Complete with Valliani Agreements"
+        : "Complete with Valliani Contracts"
   );
   const [templateId, setTemplateId] = useState(editEnvelope?.templateId || initialTemplate?.id || "");
   const [categories, setCategories] = useState<string[]>(initialCategories);
@@ -214,7 +214,7 @@ export default function NewEnvelopeForm({
       return null;
     }
     if (documentMode === "write" && documentText.trim().length < 20) {
-      return "Write at least 20 characters of agreement content.";
+      return "Write at least 20 characters of contract content.";
     }
     if (documentMode === "upload" && !uploadedFile) {
       return "Upload a document or choose Write / Use a template.";
@@ -293,7 +293,7 @@ export default function NewEnvelopeForm({
 
     const preparedRecipients = normalizeRecipientsForSubmit(signingOrderEnabled, workingRecipients);
     if (bulkMode && preparedRecipients.length < 2) {
-      setMessage("Bulk send needs at least two recipients — each gets their own agreement.");
+      setMessage("Bulk send needs at least two recipients — each gets their own contract.");
       setOpenSection("recipients");
       return;
     }
@@ -358,7 +358,7 @@ export default function NewEnvelopeForm({
     }
 
     setLoading(true);
-    setMessage(bulkMode ? "Creating agreements for each recipient..." : "Creating agreement...");
+    setMessage(bulkMode ? "Creating contracts for each recipient..." : "Creating contract...");
 
     try {
       const response = await fetch("/api/documents", { method: "POST", body: formData });
@@ -370,14 +370,14 @@ export default function NewEnvelopeForm({
         bulkCount?: number;
       };
       if (!response.ok || !result.envelopeId) {
-        setMessage(result.error || "The agreement could not be created.");
+        setMessage(result.error || "The contract could not be created.");
         return;
       }
       if (result.emailWarning) sessionStorage.setItem("esign_notice", result.emailWarning);
       if (result.bulk && result.bulkCount) {
         sessionStorage.setItem(
           "esign_notice",
-          `Created ${result.bulkCount} separate agreements (one per recipient). Place signature fields once — they apply to all drafts in this bulk send. Then send each from Agreements.`
+          `Created ${result.bulkCount} separate contracts (one per recipient). Place signature fields once — they apply to all drafts in this bulk send. Then send each from Contracts.`
         );
       }
       if (deliveryMode === "schedule" && scheduleAt && timeZone) {
@@ -464,11 +464,11 @@ export default function NewEnvelopeForm({
                 onChange={(event) => {
                   setTitle(event.target.value);
                   if (!emailSubject || emailSubject.startsWith("Complete with")) {
-                    setEmailSubject(`Complete with Valliani: ${event.target.value || "Agreement"}`);
+                    setEmailSubject(`Complete with Valliani: ${event.target.value || "Contract"}`);
                   }
                 }}
                 required
-                placeholder="Employee Workplace Policies Acknowledgment Agreement"
+                placeholder="Employee Workplace Policies Acknowledgment Contract"
                 className="h-11 w-full rounded-[2px] border border-[#c6c6c6] px-3 text-[15px] outline-none focus:border-[#4c00ff]"
               />
             </div>
@@ -573,7 +573,7 @@ export default function NewEnvelopeForm({
                 value={documentText}
                 onChange={(event) => setDocumentText(event.target.value)}
                 rows={10}
-                placeholder="Write your agreement content here..."
+                placeholder="Write your contract content here..."
                 className="w-full rounded-[2px] border border-[#c6c6c6] px-3 py-3 text-sm leading-6"
               />
             )}
@@ -598,7 +598,7 @@ export default function NewEnvelopeForm({
             {bulkMode && (
               <>
                 <div className="rounded border border-[#d9ccff] bg-[#faf8ff] px-4 py-3 text-[13px] text-[#333]">
-                  Each recipient gets <strong>their own agreement</strong> with the same document. Agreements list will
+                  Each recipient gets <strong>their own contract</strong> with the same document. Contracts list will
                   show them separately (e.g. &ldquo;{title || "Policy"} — Name&rdquo;), each with its own certificate after
                   signing.
                 </div>
@@ -669,7 +669,7 @@ export default function NewEnvelopeForm({
                 value={envelopeMessage}
                 onChange={(event) => setEnvelopeMessage(event.target.value)}
                 rows={4}
-                placeholder="Please review and sign this agreement."
+                placeholder="Please review and sign this contract."
                 className="w-full rounded-[2px] border border-[#c6c6c6] px-3 py-3 text-sm"
               />
             </div>

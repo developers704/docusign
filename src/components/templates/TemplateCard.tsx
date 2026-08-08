@@ -122,7 +122,7 @@ export default function TemplateCard({
           <button
             type="submit"
             className="rounded-xl bg-[#4c00ff] px-4 py-2 text-sm font-bold text-white"
-            title="Creates an agreement and publishes this template automatically"
+            title="Creates a contract and publishes this template automatically"
           >
             Use template
           </button>

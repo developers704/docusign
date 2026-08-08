@@ -267,7 +267,7 @@ export async function POST(request: Request) {
     const wantsTemplateDocs = documentMode === "template" || (!hasUploadedFile && !wantsWrite && hasTemplateDocuments);
 
     if (wantsWrite && documentText.length < 20 && !hasTemplateDocuments) {
-      return NextResponse.json({ error: "Write at least 20 characters of policy or agreement content." }, { status: 400 });
+      return NextResponse.json({ error: "Write at least 20 characters of policy or contract content." }, { status: 400 });
     }
     if (!hasUploadedFile && !wantsWrite && !hasTemplateDocuments) {
       return NextResponse.json({ error: "Upload a document, choose Write, or start from a template with documents." }, { status: 400 });

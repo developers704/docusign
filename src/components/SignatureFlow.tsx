@@ -157,7 +157,7 @@ export default function SignatureFlow({
   return (
     <section className="overflow-hidden rounded-2xl border border-[#e4dee8] bg-white app-shadow">
       <div className="border-b border-[#eee9f1] px-5 py-4">
-        <p className="text-[10px] font-extrabold uppercase tracking-[.16em] text-[#4c00ff]">Finish agreement</p>
+        <p className="text-[10px] font-extrabold uppercase tracking-[.16em] text-[#4c00ff]">Finish contract</p>
         <h2 className="mt-1 text-lg font-extrabold">Adopt your signature</h2>
       </div>
       <div className="p-5">

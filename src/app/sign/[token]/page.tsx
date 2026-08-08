@@ -121,7 +121,7 @@ export default async function SigningPage({ params }: { params: Promise<{ token:
 
           {terminal ? (
             <section className="m-4 rounded border border-[#e0e0e0] bg-white p-6 text-center">
-              <h2 className="text-lg font-semibold capitalize">Agreement {envelopeStatus}</h2>
+              <h2 className="text-lg font-semibold capitalize">Contract {envelopeStatus}</h2>
               <p className="mt-2 text-sm text-[#666]">No further signing action is available for this link.</p>
             </section>
           ) : !isCurrent ? (
