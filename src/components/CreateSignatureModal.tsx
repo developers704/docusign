@@ -18,6 +18,7 @@ export type SavedSignature = {
 };
 
 export const STYLE_FONTS = [
+  { id: "welcome", family: '"Source Sans 3", "Helvetica Neue", Helvetica, Arial, sans-serif', weight: 800, label: "Welcome" },
   { id: "dancing", family: '"Dancing Script", cursive', weight: 600, label: "Dancing Script" },
   { id: "great-vibes", family: '"Great Vibes", cursive', weight: 400, label: "Great Vibes" },
   { id: "pacifico", family: '"Pacifico", cursive', weight: 400, label: "Pacifico" },
@@ -58,8 +59,14 @@ function nameInitials(name: string) {
   return `${parts[0][0] || ""}${parts[parts.length - 1][0] || ""}`.toUpperCase();
 }
 
-/** Transparent PNG + dark ink, cropped tight so it sits next to the avatar */
-function renderTextToDataUrl(text: string, fontFamily: string, fontSize: number, width: number, height: number) {
+function renderTextToDataUrl(
+  text: string,
+  fontFamily: string,
+  fontSize: number,
+  width: number,
+  height: number,
+  fontWeight = 600
+) {
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
@@ -67,7 +74,7 @@ function renderTextToDataUrl(text: string, fontFamily: string, fontSize: number,
   if (!ctx) return "";
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = "#1a1a1a";
-  ctx.font = `600 ${fontSize}px ${fontFamily}`;
+  ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
   const padX = 8;
@@ -162,8 +169,8 @@ export default function CreateSignatureModal({
       const style = STYLE_FONTS.find((item) => item.id === styleId) || STYLE_FONTS[0];
 
       if (tab === "choose") {
-        signatureDataUrl = renderTextToDataUrl(fullName.trim(), style.family, 54, 640, 160);
-        initialsDataUrl = renderTextToDataUrl(initials.trim(), style.family, 42, 200, 120);
+        signatureDataUrl = renderTextToDataUrl(fullName.trim(), style.family, 54, 640, 160, style.weight);
+        initialsDataUrl = renderTextToDataUrl(initials.trim(), style.family, 42, 200, 120, style.weight);
       } else if (tab === "draw") {
         if (!padRef.current || padRef.current.isEmpty()) {
           setError("Please draw your signature.");
@@ -171,7 +178,7 @@ export default function CreateSignatureModal({
           return;
         }
         signatureDataUrl = padRef.current.getTrimmedCanvas().toDataURL("image/png");
-        initialsDataUrl = renderTextToDataUrl(initials.trim(), style.family, 42, 200, 120);
+        initialsDataUrl = renderTextToDataUrl(initials.trim(), style.family, 42, 200, 120, style.weight);
       } else {
         if (!uploaded) {
           setError("Upload a signature image (PNG or JPG).");
@@ -179,7 +186,7 @@ export default function CreateSignatureModal({
           return;
         }
         signatureDataUrl = uploaded;
-        initialsDataUrl = renderTextToDataUrl(initials.trim(), style.family, 42, 200, 120);
+        initialsDataUrl = renderTextToDataUrl(initials.trim(), style.family, 42, 200, 120, style.weight);
       }
 
       const saved: SavedSignature = {

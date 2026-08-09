@@ -31,12 +31,12 @@ export default function MobileNavDrawer({
           >
             <Icon name="close" className="h-5 w-5" />
           </button>
-          <Link href="/" onClick={onClose} className="flex items-center gap-2" aria-label="Valliani Contracts home">
+          <Link href="/" onClick={onClose} className="flex items-center gap-2" aria-label="Valliani Documents home">
             <span className="flex h-7 w-7 items-center justify-center rounded-xl brand-gradient text-[9px] font-black text-white">
-              VC
+              VD
             </span>
-            <span className="text-[16px] font-bold tracking-[-.02em] text-[#21004c]">
-              valliani<span className="font-semibold">contracts</span>
+            <span className="text-[16px] font-extrabold tracking-[-.035em] text-[#21004c]">
+              Valliani Documents
             </span>
           </Link>
         </div>

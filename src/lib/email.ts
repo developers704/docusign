@@ -335,7 +335,7 @@ export async function sendLoginOtpEmail(input: {
   officeId?: string | null;
   officeName?: string;
 }) {
-  const brand = input.officeName || "Valliani Contracts";
+  const brand = input.officeName || "Valliani Documents";
   const subject = `Your sign-in code for ${brand}`;
   const text = `Hello ${input.name},\n\nYour verification code is ${input.otp}. It expires in 10 minutes.\n\nIf you did not try to sign in, ignore this email.`;
   const html = emailShell(

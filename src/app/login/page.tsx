@@ -13,7 +13,7 @@ export default async function LoginPage() {
         <div className="absolute -right-24 bottom-16 h-80 w-80 rounded-full bg-[#ff3dbb]/20 blur-3xl" />
         <div className="relative flex items-center gap-3">
           <span className="relative flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 shadow-xl backdrop-blur"><span className="h-5 w-5 rotate-45 rounded-[3px] border-[3px] border-white"/><span className="absolute h-2.5 w-2.5 rotate-45 rounded-[2px] bg-white"/></span>
-          <div><p className="text-xl font-extrabold">Valliani Contracts</p><p className="text-[10px] font-bold uppercase tracking-[.2em] text-white/55">Contracts Cloud</p></div>
+          <div><p className="text-xl font-extrabold tracking-[-.035em]">Valliani Documents</p><p className="text-[10px] font-bold uppercase tracking-[.2em] text-white/55">Documents Cloud</p></div>
         </div>
         <div className="relative max-w-xl">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-bold backdrop-blur"><Icon name="shield" className="h-4 w-4"/>Secure multi-office platform</span>
@@ -27,7 +27,7 @@ export default async function LoginPage() {
       </section>
       <section className="flex min-h-screen items-center justify-center bg-[#fbfafc] px-5 py-10 sm:px-10">
         <div className="w-full max-w-[460px]">
-          <div className="mb-10 flex items-center gap-3 lg:hidden"><span className="flex h-10 w-10 items-center justify-center rounded-xl brand-gradient text-white"><span className="h-4 w-4 rotate-45 border-2 border-white"/></span><strong className="text-lg">Valliani Contracts</strong></div>
+          <div className="mb-10 flex items-center gap-3 lg:hidden"><span className="flex h-10 w-10 items-center justify-center rounded-xl brand-gradient text-white"><span className="h-4 w-4 rotate-45 border-2 border-white"/></span><strong className="text-lg font-extrabold tracking-[-.035em]">Valliani Documents</strong></div>
           <p className="text-xs font-extrabold uppercase tracking-[.18em] text-[#4c00ff]">Secure portal</p>
           <h2 className="mt-3 text-4xl font-extrabold tracking-[-.035em] text-[#211431]">Welcome back</h2>
           <p className="mt-3 text-sm leading-6 text-[#7d7286]">Sign in with your network or office portal account.</p>

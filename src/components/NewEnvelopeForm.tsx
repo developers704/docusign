@@ -105,7 +105,7 @@ export default function NewEnvelopeForm({
       ? `Complete with Valliani: ${editEnvelope.title}`
       : initialTemplate
         ? `Complete with Valliani: ${initialTemplate.title}`
-        : "Complete with Valliani Contracts"
+        : "Complete with Valliani Documents"
   );
   const [templateId, setTemplateId] = useState(editEnvelope?.templateId || initialTemplate?.id || "");
   const [categories, setCategories] = useState<string[]>(initialCategories);

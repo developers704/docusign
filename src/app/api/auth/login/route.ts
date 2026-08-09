@@ -75,13 +75,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid email or password, or the office account is inactive." }, { status: 401 });
   }
 
-  // Super admin skips email OTP. Portal users must verify a code sent to their email.
-  if (session.role === "super_admin") {
-    const response = NextResponse.json({ success: true, role: session.role });
-    setSessionCookie(response, session, remember, request.url);
-    return response;
-  }
-
+  // All roles (including admin) must verify a one-time code sent to their email.
   const otp = createSecureToken().slice(0, 6).toUpperCase();
   const challenge = await createLoginOtpChallenge({
     pendingSession: {

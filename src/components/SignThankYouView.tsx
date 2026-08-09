@@ -182,7 +182,7 @@ export default function SignThankYouView({
                   <p className="text-sm font-bold text-[#1c1230]">Legally recorded e-signature</p>
                   <p className="mt-0.5 text-xs leading-5 text-[#6d647a]">
                     Your action was captured with a secure audit trail — including time, signer identity, and
-                    document integrity — through Valliani Contracts.
+                    document integrity — through Valliani Documents.
                   </p>
                 </div>
               </div>

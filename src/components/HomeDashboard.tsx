@@ -38,7 +38,13 @@ function firstInitial(name: string) {
   return name.trim().charAt(0).toUpperCase() || "V";
 }
 
-/** DocuSign-style: avatar + signature tight together; Edit only while hovering */
+/** Same typography as the "Welcome back" label directly above this block. */
+const WELCOME_NAME_CLASS = {
+  mobile: "min-w-0 text-[28px] font-normal uppercase tracking-[.04em] text-white",
+  desktop: "min-w-0 truncate text-[12px] font-semibold uppercase tracking-[.12em] text-white/70",
+} as const;
+
+/** DocuSign-style: avatar + name in Welcome-back font; Edit only while hovering */
 function WelcomeProfileBlock({
   userName,
   savedSignature,
@@ -51,39 +57,27 @@ function WelcomeProfileBlock({
   layout: "mobile" | "desktop";
 }) {
   const hasSignature = Boolean(savedSignature?.signatureDataUrl);
-  const avatarSize = layout === "mobile" ? "h-14 w-14 text-[22px]" : "h-14 w-14 text-lg";
+  const avatarSize = layout === "mobile" ? "h-14 w-14 text-[22px]" : "h-10 w-10 text-sm";
   const avatarBg = layout === "mobile" ? "bg-[#9fd4e0]" : "bg-white/15";
+  const displayName = savedSignature?.fullName?.trim() || userName;
 
   return (
-    <div className={`group/profile relative inline-flex flex-col items-start ${layout === "mobile" ? "mt-6" : "mt-4"}`}>
+    <div className={`group/profile relative inline-flex flex-col items-start ${layout === "mobile" ? "mt-6" : "mt-3"}`}>
       <div className="inline-flex max-w-full items-center gap-2.5 sm:gap-3">
         <span
           className={`flex shrink-0 items-center justify-center rounded-full font-semibold text-white ${avatarSize} ${avatarBg}`}
         >
-          {layout === "mobile" ? firstInitial(userName) : initials(userName)}
+          {layout === "mobile" ? firstInitial(displayName) : initials(displayName)}
         </span>
 
-        {hasSignature ? (
-          <button
-            type="button"
-            onClick={onEditSignature}
-            className="inline-flex h-12 max-w-[min(100vw-6rem,280px)] items-center bg-transparent p-0"
-            aria-label="Edit signature"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={savedSignature!.signatureDataUrl}
-              alt={`Signature for ${userName}`}
-              className="h-11 w-auto max-w-full object-contain object-left brightness-0 invert"
-            />
-          </button>
-        ) : layout === "mobile" ? (
-          <span className="min-w-0 text-[28px] font-normal leading-tight tracking-[-.02em] text-white sm:text-[32px]">
-            {userName}
-          </span>
-        ) : (
-          <h1 className="min-w-0 truncate text-[34px] font-normal tracking-[-.02em] text-white">{userName}</h1>
-        )}
+        <button
+          type="button"
+          onClick={onEditSignature}
+          className={`bg-transparent p-0 text-left ${WELCOME_NAME_CLASS[layout]}`}
+          aria-label={hasSignature ? "Edit signature" : "Create signature"}
+        >
+          {displayName}
+        </button>
       </div>
 
       {hasSignature ? (

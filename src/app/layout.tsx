@@ -5,13 +5,13 @@ import "./globals.css";
 
 const sourceSans = Source_Sans_3({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800"],
   variable: "--font-app",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Valliani Contracts",
+  title: "Valliani Documents",
   description: "Secure multi-office electronic signature and contract workflow platform",
 };
 

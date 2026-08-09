@@ -1,7 +1,7 @@
 # Copy these into cPanel > Setup Node.js App > Environment variables
 # Replace placeholder values before saving.
 
-APP_URL=https://docusign.vallianiuniversity.com
+APP_URL=https://documents.valliani.app
 NODE_ENV=production
 
 ADMIN_NAME=Valliani Network Administrator
@@ -20,12 +20,12 @@ DATABASE_PASSWORD=YOUR-DB-PASSWORD-HERE
 
 # Optional fallback — prefer Settings > Email / SMTP in the app
 # Option A: custom / cPanel mailbox
-SMTP_HOST=mail.docusign.vallianiuniversity.com
+SMTP_HOST=mail.documents.valliani.app
 SMTP_PORT=465
 SMTP_SECURE=true
-SMTP_USER=shafquat@docusign.vallianiuniversity.com
+SMTP_USER=noreply@documents.valliani.app
 SMTP_PASS=SET-IN-CPANEL-ONLY
-EMAIL_FROM=Valliani Agreements <shafquat@docusign.vallianiuniversity.com>
+EMAIL_FROM=Valliani Documents <noreply@documents.valliani.app>
 
 # Option B: Gmail SMTP (use App Password, not normal Gmail password)
 # Or set this from Settings > Email / SMTP > Gmail SMTP (recommended)
@@ -34,4 +34,4 @@ EMAIL_FROM=Valliani Agreements <shafquat@docusign.vallianiuniversity.com>
 # SMTP_SECURE=true
 # SMTP_USER=you@gmail.com
 # SMTP_PASS=your-16-char-app-password
-# EMAIL_FROM=Valliani Agreements <you@gmail.com>
+# EMAIL_FROM=Valliani Documents <you@gmail.com>

@@ -419,7 +419,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                 <summary className="cursor-pointer text-sm font-semibold text-[#6b6578]">
                   Optional: other environment variables (APP_URL, secrets)
                 </summary>
-                <pre className="mt-3 overflow-auto rounded-md bg-[#21004c] p-5 text-xs text-white">{`APP_URL=https://sign.yourdomain.com
+                <pre className="mt-3 overflow-auto rounded-md bg-[#21004c] p-5 text-xs text-white">{`APP_URL=https://documents.valliani.app
 ADMIN_NAME=Network Administrator
 ADMIN_EMAIL=admin@yourdomain.com
 ADMIN_PASSWORD=use-a-strong-password

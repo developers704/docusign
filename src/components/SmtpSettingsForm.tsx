@@ -68,7 +68,7 @@ export default function SmtpSettingsForm({
       setPort(String(GMAIL_PRESET.port));
       setSecure(GMAIL_PRESET.secure);
       if (!from.trim() && user.trim()) {
-        setFrom(`Valliani Contracts <${user.trim()}>`);
+        setFrom(`Valliani Documents <${user.trim()}>`);
       }
     }
   }
@@ -218,7 +218,7 @@ export default function SmtpSettingsForm({
               const next = event.target.value;
               setUser(next);
               if (provider === "gmail" && (!from || from.includes("@gmail.com") || from.includes(user))) {
-                setFrom(next.includes("@") ? `Valliani Contracts <${next.trim()}>` : from);
+                setFrom(next.includes("@") ? `Valliani Documents <${next.trim()}>` : from);
               }
             }}
             required
@@ -250,7 +250,7 @@ export default function SmtpSettingsForm({
             name="fromName"
             value={fromName}
             onChange={(event) => setFromName(event.target.value)}
-            placeholder="e.g. Valliani Contracts"
+            placeholder="e.g. Valliani Documents"
             className="h-10 w-full rounded-md border border-[#c8c8d3] px-3 text-sm outline-none focus:border-[#21004c]"
           />
           <p className="mt-1 text-[11px] text-[#6b6578]">Emails appear as: From Name &lt;address&gt;</p>

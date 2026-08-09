@@ -37,7 +37,7 @@ export default function FieldEditorDemo() {
     </aside>
     <main className="min-w-0 flex-1 overflow-auto p-8 scrollbar-thin">
       <div className="mx-auto w-[720px] rounded-lg bg-white p-14 shadow-2xl shadow-[#2e1c42]/20">
-        <div className="border-b-2 border-[#2c2038] pb-5"><p className="text-[10px] font-extrabold uppercase tracking-[.2em] text-[#4c00ff]">Valliani Contracts</p><h1 className="mt-2 text-2xl font-extrabold">Jewelry Purchase & Custom Order Contract</h1><p className="mt-2 text-xs text-[#716678]">Contract ID: SAMPLE-2026-001</p></div>
+        <div className="border-b-2 border-[#2c2038] pb-5"><p className="text-[10px] font-extrabold uppercase tracking-[.2em] text-[#4c00ff]">Valliani Documents</p><h1 className="mt-2 text-2xl font-extrabold">Jewelry Purchase & Custom Order Contract</h1><p className="mt-2 text-xs text-[#716678]">Contract ID: SAMPLE-2026-001</p></div>
         <div className="relative mt-7 min-h-[780px] text-[12px] leading-6 text-[#473a52]">
           <h2 className="text-sm font-extrabold text-[#23152f]">Customer Information</h2><div className="mt-3 grid grid-cols-2 gap-4"><p><strong>Name:</strong> Customer Name</p><p><strong>Email:</strong> customer@example.com</p><p><strong>Phone:</strong> (555) 000-0000</p><p><strong>Order:</strong> VJ-001245</p></div>
           <h2 className="mt-7 text-sm font-extrabold text-[#23152f]">Contract Terms</h2><p className="mt-3">The customer confirms that product details, sizing, engraving, materials, pricing, deposit and delivery information have been reviewed and approved.</p><p className="mt-3">Custom-made, engraved, resized or special-order products may be subject to additional cancellation and return restrictions.</p>
