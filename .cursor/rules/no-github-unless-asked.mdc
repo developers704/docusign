@@ -1,0 +1,11 @@
+---
+description: Do not commit or push to GitHub unless the user explicitly asks; prefer local/VM code fixes only.
+alwaysApply: true
+---
+
+# No GitHub unless asked
+
+- Do **not** run `git commit` or `git push` unless the user explicitly asks in that message.
+- Prefer fixing issues in local code and/or directly on the VM server.
+- Saving preferences / rules in Cursor memory is fine; publishing to GitHub is not automatic.
+- If a fix is needed on the VM, apply or instruct VM-side changes without requiring a GitHub round-trip unless the user asks.

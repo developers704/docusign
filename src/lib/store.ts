@@ -13,6 +13,7 @@ import type {
   TemplateFolderRecord,
   TemplateRecord,
   UserRecord,
+  UserRole,
   WebFormRecord,
   SmtpSettingsRecord,
   AppNotificationRecord,
@@ -732,7 +733,7 @@ export type LoginOtpChallenge = {
     userId: string;
     email: string;
     name: string;
-    role: UserRecord["role"];
+    role: UserRole;
     officeId: string | null;
   };
   otpHash: string;
