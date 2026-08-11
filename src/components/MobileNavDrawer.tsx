@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -31,12 +31,10 @@ export default function MobileNavDrawer({
           >
             <Icon name="close" className="h-5 w-5" />
           </button>
-          <Link href="/" onClick={onClose} className="flex items-center gap-2" aria-label="Valliani Documents home">
-            <span className="flex h-7 w-7 items-center justify-center rounded-xl brand-gradient text-[9px] font-black text-white">
-              VD
-            </span>
+          <Link href="/" onClick={onClose} className="flex items-center gap-2" aria-label="Valliani Contracts home">
+            <span className="flex h-7 w-7 items-center justify-center rounded-xl brand-gradient text-[9px] font-black text-white">VC</span>
             <span className="text-[16px] font-extrabold tracking-[-.035em] text-[#21004c]">
-              Valliani Documents
+              Valliani Contracts
             </span>
           </Link>
         </div>

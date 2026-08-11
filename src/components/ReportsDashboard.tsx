@@ -47,7 +47,7 @@ export default function ReportsDashboard({
       label: "Sent",
       value: String(sent),
       icon: "send",
-      hint: "Envelopes sent to recipients",
+      hint: "Contracts sent to recipients",
       href: "/agreements?view=sent",
     },
     {
@@ -144,7 +144,7 @@ export default function ReportsDashboard({
             <article className="rounded-[2px] border border-[#e5e5e5] bg-white p-6">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-[16px] font-semibold text-[#000]">Envelope usage</h2>
+                  <h2 className="text-[16px] font-semibold text-[#000]">Contract usage</h2>
                   <p className="mt-1 text-[12px] text-[#666]">Progress from send to completion</p>
                 </div>
                 <Link href="/reports?view=envelopes" className="text-[12px] font-bold text-[#4c00ff] hover:underline">
@@ -245,14 +245,14 @@ export default function ReportsDashboard({
         {view === "envelopes" ? (
           <section className="mt-6 overflow-hidden rounded-[2px] border border-[#e5e5e5] bg-white">
             <div className="flex items-center justify-between border-b border-[#e5e5e5] px-6 py-4">
-              <h2 className="text-[16px] font-semibold text-[#000]">Envelope usage detail</h2>
+              <h2 className="text-[16px] font-semibold text-[#000]">Contract usage detail</h2>
               <Link href="/agreements" className="text-[12px] font-bold text-[#4c00ff] hover:underline">
                 All contracts →
               </Link>
             </div>
             <div className="divide-y divide-[#ececec]">
               {scoped.length === 0 ? (
-                <p className="px-6 py-16 text-center text-[14px] text-[#666]">No envelopes in this date range.</p>
+                <p className="px-6 py-16 text-center text-[14px] text-[#666]">No contracts in this date range.</p>
               ) : (
                 scoped.slice(0, 40).map((envelope) => (
                   <Link

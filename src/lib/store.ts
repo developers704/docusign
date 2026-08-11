@@ -353,8 +353,15 @@ export async function readAppProfile(): Promise<AppProfileRecord> {
     updatedAt: "",
   };
   try {
-    const content = await readFile(APP_PROFILE_FILE, "utf8");
-    const parsed = JSON.parse(content) as Partial<AppProfileRecord>;
+    const content = (await readFile(APP_PROFILE_FILE, "utf8")).replace(/^\uFEFF/, "").trim();
+    if (!content) return fallback;
+    let parsed: Partial<AppProfileRecord>;
+    try {
+      parsed = JSON.parse(content) as Partial<AppProfileRecord>;
+    } catch {
+      console.error("[app-profile] invalid JSON, using env/fallback");
+      return fallback;
+    }
     if (!parsed || typeof parsed !== "object") return fallback;
     return {
       adminName: String(parsed.adminName || fallback.adminName).trim() || fallback.adminName,

@@ -1,4 +1,4 @@
-import path from "node:path";
+﻿import path from "node:path";
 import type { EnvelopeRecord, RecipientRecord } from "./types";
 import { buildAppUrl, sendMail } from "./smtp";
 
@@ -335,7 +335,7 @@ export async function sendLoginOtpEmail(input: {
   officeId?: string | null;
   officeName?: string;
 }) {
-  const brand = input.officeName || "Valliani Documents";
+  const brand = input.officeName || "Valliani Contracts";
   const subject = `Your sign-in code for ${brand}`;
   const text = `Hello ${input.name},\n\nYour verification code is ${input.otp}. It expires in 10 minutes.\n\nIf you did not try to sign in, ignore this email.`;
   const html = emailShell(

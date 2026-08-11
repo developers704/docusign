@@ -64,7 +64,7 @@ export default async function NewDocumentPage({
                 ? "Edit recipients, emails & message"
                 : bulk === "1"
                   ? "Bulk send"
-                  : "Upload a Document and Add Envelope Recipients"}
+                  : "Upload a Document and Add Contract Recipients"}
             </h1>
           </div>
           {bulk === "1" && !editEnvelope ? (

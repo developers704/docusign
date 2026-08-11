@@ -150,7 +150,7 @@ export default function PowerFormManagePanel({
                 <th className="py-2 pr-3">Email</th>
                 <th className="py-2 pr-3">Status</th>
                 <th className="py-2 pr-3">Date</th>
-                <th className="py-2">Envelope</th>
+                <th className="py-2">Contract</th>
               </tr>
             </thead>
             <tbody>

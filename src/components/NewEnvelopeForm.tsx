@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -105,7 +105,7 @@ export default function NewEnvelopeForm({
       ? `Complete with Valliani: ${editEnvelope.title}`
       : initialTemplate
         ? `Complete with Valliani: ${initialTemplate.title}`
-        : "Complete with Valliani Documents"
+        : "Complete with Valliani Contracts"
   );
   const [templateId, setTemplateId] = useState(editEnvelope?.templateId || initialTemplate?.id || "");
   const [categories, setCategories] = useState<string[]>(initialCategories);

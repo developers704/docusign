@@ -22,7 +22,7 @@ export default function DeleteOfficeButton({
       action={action}
       onSubmit={(event) => {
         const ok = window.confirm(
-          `Delete office "${officeName}" permanently?\n\nThis removes ${accountCount} portal account(s) and ${envelopeCount} envelope(s). This cannot be undone.`
+          `Delete office "${officeName}" permanently?\n\nThis removes ${accountCount} portal account(s) and ${envelopeCount} contract(s). This cannot be undone.`
         );
         if (!ok) event.preventDefault();
       }}

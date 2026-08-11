@@ -253,7 +253,7 @@ export default function HomeDashboard({
                     className="flex items-center gap-3 px-4 py-2.5 text-[14px] font-semibold text-[#212121] hover:bg-[#f2f2f2]"
                   >
                     <Icon name="send" className="h-4 w-4 text-[#4c00ff]" />
-                    Send an Envelope
+                    Send a contract
                   </Link>
                   <Link
                     href="/templates"

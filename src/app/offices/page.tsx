@@ -251,7 +251,7 @@ export default async function OfficesPage({
                           </div>
                           <p className="mt-1 truncate text-xs text-[#8a7f96]">
                             {office.email || "No contact email"} · {officeUsers.length} accounts ·{" "}
-                            {officeEnvelopes.length} envelopes
+                            {officeEnvelopes.length} contracts
                           </p>
                         </Link>
                         <div className="flex flex-wrap items-center gap-2">
@@ -446,7 +446,7 @@ export default async function OfficesPage({
                 </details>
 
                 <p className="mt-3 text-[11px] text-[#8a7f96]">
-                  {selectedEnvelopes.length} envelope{selectedEnvelopes.length === 1 ? "" : "s"} in this office.
+                  {selectedEnvelopes.length} contract{selectedEnvelopes.length === 1 ? "" : "s"} in this office.
                 </p>
               </div>
             </article>

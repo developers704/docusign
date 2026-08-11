@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { Suspense, useEffect, useState, type ReactNode } from "react";
@@ -93,13 +93,11 @@ function DocuSignLayoutInner({
           <Link
             href="/"
             className="mx-auto flex items-center gap-2"
-            aria-label="Valliani Documents home"
+            aria-label="Valliani Contracts home"
           >
-            <span className="flex h-7 w-7 items-center justify-center rounded-xl brand-gradient text-[9px] font-black text-white shadow-md shadow-violet-200/50">
-              VD
-            </span>
+            <span className="flex h-7 w-7 items-center justify-center rounded-xl brand-gradient text-[9px] font-black text-white shadow-md shadow-violet-200/50">VC</span>
             <span className="text-[17px] font-extrabold tracking-[-.035em] text-[#1c1230]">
-              Valliani Documents
+              Valliani Contracts
             </span>
           </Link>
 
@@ -110,12 +108,10 @@ function DocuSignLayoutInner({
 
         {/* Desktop header */}
         <div className="hidden h-16 items-center gap-4 px-5 lg:flex">
-          <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Valliani Documents home">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl brand-gradient text-[11px] font-black text-white shadow-md shadow-violet-200/50">
-              VD
-            </span>
+          <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Valliani Contracts home">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl brand-gradient text-[11px] font-black text-white shadow-md shadow-violet-200/50">VC</span>
             <span className="text-[20px] font-extrabold leading-none tracking-[-.035em] text-[#1c1230]">
-              Valliani Documents
+              Valliani Contracts
             </span>
           </Link>
 

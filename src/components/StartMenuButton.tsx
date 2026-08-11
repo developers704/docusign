@@ -77,7 +77,7 @@ export default function StartMenuButton({ onNavigate }: { onNavigate?: () => voi
             >
               <span className="inline-flex items-center gap-3">
                 <Icon name="send" className="h-4 w-4 text-[#4c00ff]" />
-                Envelopes
+                Contracts
               </span>
               <Icon name="chevron" className="h-3.5 w-3.5 rotate-90 text-[#888]" />
             </button>
@@ -89,7 +89,7 @@ export default function StartMenuButton({ onNavigate }: { onNavigate?: () => voi
                   onClick={close}
                   className="block px-4 py-2.5 text-[14px] font-semibold text-[#212121] hover:bg-[#f2f2f2]"
                 >
-                  Send an Envelope
+                  Send a contract
                 </Link>
                 <Link
                   href="/documents/new"

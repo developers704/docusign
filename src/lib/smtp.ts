@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+﻿import { readFile } from "node:fs/promises";
 import net from "node:net";
 import tls from "node:tls";
 import path from "node:path";
@@ -188,7 +188,7 @@ async function createMimeMessage(config: SmtpConfig, options: MailOptions) {
     `Date: ${new Date().toUTCString()}`,
     `Message-ID: <${Date.now()}.${Math.random().toString(16).slice(2)}@${senderDomain(fromEmail)}>`,
     "MIME-Version: 1.0",
-    "X-Mailer: Valliani Documents",
+    "X-Mailer: Valliani Contracts",
     "Auto-Submitted: auto-generated",
   ];
 
@@ -400,7 +400,7 @@ async function sendSmtp(config: SmtpConfig, options: MailOptions) {
     } catch {
       const detail = plainError instanceof Error ? plainError.message : "Authentication failed";
       throw new Error(
-        `${detail}. On cPanel this is often (1) wrong saved password — clear the Password field, type it again, Save; or (2) host SMTP lock — create a mailbox on THIS cPanel (e.g. noreply@documents.valliani.app) and use that host/user, or switch to Gmail SMTP. Port 587 = SSL checkbox OFF; port 465 = SSL ON.`
+        `${detail}. On cPanel this is often (1) wrong saved password — clear the Password field, type it again, Save; or (2) host SMTP lock — create a mailbox on THIS cPanel (e.g. noreply@contracts.valliani.app) and use that host/user, or switch to Gmail SMTP. Port 587 = SSL checkbox OFF; port 465 = SSL ON.`
       );
     }
   }
@@ -480,9 +480,9 @@ export async function sendSmtpTestEmail(to: string, officeId?: string | null) {
   const result = await sendMail({
     to,
     officeId,
-    subject: `Valliani Documents SMTP test (${new Date().toLocaleString()})`,
-    text: `This is a test email from Valliani Documents.\n\nSMTP host: ${config.host}\nFrom: ${config.from}\nTime: ${new Date().toISOString()}\n\nIf you received this, outbound email is working.`,
-    html: `<p>This is a test email from <strong>Valliani Documents</strong>.</p><p>SMTP host: ${config.host}<br/>From: ${config.from}<br/>Time: ${new Date().toISOString()}</p><p>If you received this, outbound email is working.</p>`,
+    subject: `Valliani Contracts SMTP test (${new Date().toLocaleString()})`,
+    text: `This is a test email from Valliani Contracts.\n\nSMTP host: ${config.host}\nFrom: ${config.from}\nTime: ${new Date().toISOString()}\n\nIf you received this, outbound email is working.`,
+    html: `<p>This is a test email from <strong>Valliani Contracts</strong>.</p><p>SMTP host: ${config.host}<br/>From: ${config.from}<br/>Time: ${new Date().toISOString()}</p><p>If you received this, outbound email is working.</p>`,
   });
   if (!result.sent) return result;
   return {

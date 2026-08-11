@@ -36,7 +36,7 @@ export const sectionSideNav: Record<AdminNavSection, SideNavGroup[]> = {
   ],
   agreements: [
     {
-      title: "Envelopes",
+      title: "Contracts",
       items: [
         { href: "/agreements", label: "All contracts", icon: "agreement" },
         { href: "/agreements?view=waiting", label: "Waiting for others", icon: "clock" },
@@ -54,7 +54,7 @@ export const sectionSideNav: Record<AdminNavSection, SideNavGroup[]> = {
   ],
   templates: [
     {
-      title: "Envelope Templates",
+      title: "Contract Templates",
       items: [
         { href: "/templates", label: "My Templates", icon: "template" },
         { href: "/templates?view=global", label: "Shared with Me", icon: "team" },
@@ -87,7 +87,7 @@ export const sectionSideNav: Record<AdminNavSection, SideNavGroup[]> = {
     {
       title: "Report type",
       items: [
-        { href: "/reports?view=envelopes", label: "Envelope usage", icon: "agreement" },
+        { href: "/reports?view=envelopes", label: "Contract usage", icon: "agreement" },
         { href: "/reports?view=recipients", label: "Recipient activity", icon: "contact" },
       ],
     },

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { Icon } from "@/components/Icons";
@@ -130,7 +130,7 @@ export default function SignThankYouView({
                     <dd className="font-bold text-[#3a2f4a]">{officeName}</dd>
                   </div>
                   <div>
-                    <dt className="text-[11px] font-semibold text-[#958a9f]">Envelope</dt>
+                    <dt className="text-[11px] font-semibold text-[#958a9f]">Contract</dt>
                     <dd className="font-bold text-[#3a2f4a]">{envelopeNumber}</dd>
                   </div>
                   <div>
@@ -182,7 +182,7 @@ export default function SignThankYouView({
                   <p className="text-sm font-bold text-[#1c1230]">Legally recorded e-signature</p>
                   <p className="mt-0.5 text-xs leading-5 text-[#6d647a]">
                     Your action was captured with a secure audit trail — including time, signer identity, and
-                    document integrity — through Valliani Documents.
+                    document integrity — through Valliani Contracts.
                   </p>
                 </div>
               </div>

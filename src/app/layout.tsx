@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from "next";
+﻿import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Source_Sans_3 } from "next/font/google";
 import "./globals.css";
@@ -11,7 +11,7 @@ const sourceSans = Source_Sans_3({
 });
 
 export const metadata: Metadata = {
-  title: "Valliani Documents",
+  title: "Valliani Contracts",
   description: "Secure multi-office electronic signature and contract workflow platform",
 };
 

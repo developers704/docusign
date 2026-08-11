@@ -20,7 +20,7 @@ export default async function ReportsPage({
       : view === "recipients"
         ? "Recipient activity"
         : view === "envelopes"
-          ? "Envelope usage"
+          ? "Contract usage"
           : "Administrator dashboard";
 
   return (
