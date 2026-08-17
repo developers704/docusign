@@ -1,4 +1,4 @@
-================================================================================
+﻿================================================================================
   COMPANY E-SIGN — A2 HOSTING / cPanel UPLOAD GUIDE
   (Upload karo, settings set karo, chal jayega — server par build mat karo)
 ================================================================================
@@ -37,12 +37,12 @@ Create application with these exact settings:
     Node.js version:     20.x or 22.x
     Application mode:    Production
     Application root:  company-esign
-    Application URL:   documents.valliani.app
+    Application URL:   contracts.valliani.app
     Startup file:      server.js
 
 Environment variables (Add Variable — copy from CPANEL-ENV.txt):
 
-    APP_URL=https://documents.valliani.app
+    APP_URL=https://contracts.valliani.app
     NODE_ENV=production
     ADMIN_NAME=Valliani Network Administrator
     ADMIN_EMAIL=admin@vallianiuniversity.com
@@ -51,12 +51,12 @@ Environment variables (Add Variable — copy from CPANEL-ENV.txt):
     OTP_SECRET=another-long-random-secret-here
     REQUIRE_EMAIL_OTP=true
 
-    SMTP_HOST=mail.documents.valliani.app
+    SMTP_HOST=mail.contracts.valliani.app
     SMTP_PORT=465
     SMTP_SECURE=true
-    SMTP_USER=noreply@documents.valliani.app
+    SMTP_USER=noreply@contracts.valliani.app
     SMTP_PASS=your-email-password
-    EMAIL_FROM=Valliani Documents <noreply@documents.valliani.app>
+    EMAIL_FROM=Valliani Contracts <noreply@contracts.valliani.app>
 
 DO NOT click:
     - Run JS script (build)
@@ -79,7 +79,7 @@ APP_URL must start with https://
 
 STEP 5 — TEST
 -------------
-1. Open https://documents.valliani.app
+1. Open https://contracts.valliani.app
 2. Login with ADMIN_EMAIL and ADMIN_PASSWORD
 3. Create an office and send a test envelope
 
@@ -122,7 +122,7 @@ Restart alone is NOT enough if .next was not replaced.
       npm ci --omit=dev
 6. Setup Node.js App > START / RESTART
 7. Open this URL to confirm new code is live:
-      https://documents.valliani.app/api/version
+      https://contracts.valliani.app/api/version
    You MUST see:
       "certificateLayoutVersion": 2
       "signerLocalTimeOnCertificate": true

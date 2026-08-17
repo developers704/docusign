@@ -1,7 +1,5 @@
-﻿import { readFile } from "node:fs/promises";
-import net from "node:net";
-import tls from "node:tls";
-import path from "node:path";
+﻿import path from "node:path";
+import nodemailer from "nodemailer";
 import { readOfficeSmtpSettings, readSmtpSettings } from "./store";
 import type { SmtpSettingsRecord } from "./types";
 
@@ -38,6 +36,7 @@ type MailResult = {
 };
 
 const SMTP_TIMEOUT_MS = 45_000;
+const START_TLS_PORTS = new Set([25, 587, 2525, 2587]);
 
 function configFromEnv(): SmtpConfig | null {
   const host = process.env.SMTP_HOST?.trim();
@@ -59,11 +58,10 @@ function configFromEnv(): SmtpConfig | null {
 
 function configFromRecord(saved: SmtpSettingsRecord): SmtpConfig {
   const port = Number(saved.port) || 465;
-  const startTlsPorts = new Set([25, 587, 2525, 2587]);
   return {
     host: saved.host,
     port,
-    secure: startTlsPorts.has(port) ? false : port === 465 ? true : Boolean(saved.secure),
+    secure: START_TLS_PORTS.has(port) ? false : port === 465 ? true : Boolean(saved.secure),
     user: saved.user,
     pass: saved.pass,
     from: saved.from,
@@ -147,10 +145,6 @@ function normalizeRecipients(to: string | string[]) {
   return (Array.isArray(to) ? to : [to]).map((item) => item.trim()).filter(Boolean);
 }
 
-function wrapBase64(buffer: Buffer) {
-  return buffer.toString("base64").match(/.{1,76}/g)?.join("\r\n") || "";
-}
-
 function extractEmail(value: string) {
   const angleMatch = value.match(/<([^>]+)>/);
   return (angleMatch?.[1] || value).trim();
@@ -161,284 +155,68 @@ export function formatFromAddress(from: string, fromName?: string) {
   const email = extractEmail(from);
   const name = String(fromName || "").trim().replace(/[\r\n"]/g, "");
   if (!name) {
-    // Keep existing "Name <email>" if already present.
     if (from.includes("<") && from.includes(">")) return from.trim();
     return email;
   }
   return `${encodeHeader(name)} <${email}>`;
 }
 
-function senderDomain(email: string) {
-  const at = email.lastIndexOf("@");
-  return at >= 0 ? email.slice(at + 1) : "localhost";
-}
+function createTransporter(config: SmtpConfig) {
+  const port = Number(config.port);
+  const useStartTls = START_TLS_PORTS.has(port) || !config.secure;
+  const user = config.user.trim();
+  const pass = config.pass.trim();
 
-async function createMimeMessage(config: SmtpConfig, options: MailOptions) {
-  const recipients = normalizeRecipients(options.to);
-  const fromAddress = formatFromAddress(options.from || config.from, config.fromName);
-  const fromEmail = extractEmail(fromAddress);
-  const mixedBoundary = `mixed_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-  const alternativeBoundary = `alt_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-  const hasAttachments = Boolean(options.attachments?.length);
-  const lines: string[] = [
-    `From: ${fromAddress}`,
-    `To: ${recipients.join(", ")}`,
-    `Reply-To: ${fromEmail}`,
-    `Subject: ${encodeHeader(options.subject)}`,
-    `Date: ${new Date().toUTCString()}`,
-    `Message-ID: <${Date.now()}.${Math.random().toString(16).slice(2)}@${senderDomain(fromEmail)}>`,
-    "MIME-Version: 1.0",
-    "X-Mailer: Valliani Contracts",
-    "Auto-Submitted: auto-generated",
-  ];
-
-  if (hasAttachments) {
-    lines.push(`Content-Type: multipart/mixed; boundary="${mixedBoundary}"`, "", `--${mixedBoundary}`);
-  }
-
-  lines.push(`Content-Type: multipart/alternative; boundary="${alternativeBoundary}"`, "");
-  lines.push(
-    `--${alternativeBoundary}`,
-    'Content-Type: text/plain; charset="UTF-8"',
-    "Content-Transfer-Encoding: 8bit",
-    "",
-    options.text,
-    ""
-  );
-
-  if (options.html) {
-    lines.push(
-      `--${alternativeBoundary}`,
-      'Content-Type: text/html; charset="UTF-8"',
-      "Content-Transfer-Encoding: 8bit",
-      "",
-      options.html,
-      ""
-    );
-  }
-
-  lines.push(`--${alternativeBoundary}--`);
-
-  if (hasAttachments) {
-    for (const attachment of options.attachments || []) {
-      const bytes = await readFile(attachment.filePath);
-      lines.push(
-        `--${mixedBoundary}`,
-        `Content-Type: ${attachment.contentType || "application/octet-stream"}; name="${attachment.filename}"`,
-        "Content-Transfer-Encoding: base64",
-        `Content-Disposition: attachment; filename="${attachment.filename}"`,
-        "",
-        wrapBase64(bytes),
-        ""
-      );
-    }
-    lines.push(`--${mixedBoundary}--`);
-  }
-
-  return lines.join("\r\n").replace(/^\./gm, "..");
-}
-
-type SmtpResponse = { code: number; message: string };
-
-function createSmtpSession(socket: net.Socket | tls.TLSSocket) {
-  let buffer = "";
-  const waiters: Array<{
-    resolve: (value: SmtpResponse) => void;
-    reject: (error: Error) => void;
-  }> = [];
-
-  socket.setEncoding("utf8");
-  socket.setTimeout(SMTP_TIMEOUT_MS);
-
-  const flush = () => {
-    while (waiters.length) {
-      const lines = buffer.split("\r\n");
-      if (lines.length < 2) return;
-
-      let endIndex = -1;
-      for (let index = 0; index < lines.length - 1; index += 1) {
-        // Final SMTP line is "NNN text" (space). Continuations are "NNN-text".
-        if (/^\d{3} /.test(lines[index])) {
-          endIndex = index;
-          break;
-        }
-      }
-      if (endIndex < 0) return;
-
-      const responseLines = lines.slice(0, endIndex + 1);
-      buffer = lines.slice(endIndex + 1).join("\r\n");
-      const code = Number(responseLines[responseLines.length - 1].slice(0, 3));
-      const waiter = waiters.shift();
-      waiter?.resolve({ code, message: responseLines.join("\n") });
-    }
-  };
-
-  socket.on("data", (chunk: string) => {
-    buffer += chunk;
-    flush();
+  return nodemailer.createTransport({
+    host: config.host,
+    port,
+    secure: useStartTls ? false : true,
+    requireTLS: useStartTls,
+    auth: { user, pass },
+    tls: { rejectUnauthorized: false },
+    connectionTimeout: SMTP_TIMEOUT_MS,
+    greetingTimeout: SMTP_TIMEOUT_MS,
+    socketTimeout: SMTP_TIMEOUT_MS,
   });
-
-  socket.on("error", (error) => {
-    while (waiters.length) waiters.shift()?.reject(error);
-  });
-
-  socket.on("timeout", () => {
-    const error = new Error("SMTP connection timed out.");
-    while (waiters.length) waiters.shift()?.reject(error);
-    socket.destroy(error);
-  });
-
-  socket.on("close", () => {
-    const error = new Error("SMTP connection closed unexpectedly.");
-    while (waiters.length) waiters.shift()?.reject(error);
-  });
-
-  const readResponse = () =>
-    new Promise<SmtpResponse>((resolve, reject) => {
-      waiters.push({ resolve, reject });
-      flush();
-    });
-
-  const expect = async (allowed: number[]) => {
-    const response = await readResponse();
-    if (!allowed.includes(response.code)) {
-      throw new Error(`SMTP error ${response.code}: ${response.message}`);
-    }
-    return response;
-  };
-
-  const command = async (value: string, allowed: number[]) => {
-    socket.write(`${value}\r\n`);
-    return expect(allowed);
-  };
-
-  return { expect, command };
-}
-
-async function connectSocket(config: SmtpConfig) {
-  // Shared hosts often block 465/587 (SMTP Tweak) but allow 2525 with STARTTLS.
-  const startTlsPorts = new Set([25, 587, 2525, 2587]);
-  const useImplicitTls =
-    config.port === 465 || (config.secure && !startTlsPorts.has(config.port));
-  if (useImplicitTls) {
-    const socket = tls.connect({
-      host: config.host,
-      port: config.port,
-      servername: config.host,
-      rejectUnauthorized: false,
-    });
-    await new Promise<void>((resolve, reject) => {
-      const onError = (error: Error) => reject(error);
-      socket.once("error", onError);
-      socket.once("secureConnect", () => {
-        socket.off("error", onError);
-        resolve();
-      });
-      setTimeout(() => reject(new Error("SMTP TLS connect timed out.")), SMTP_TIMEOUT_MS);
-    });
-    return { socket, useStartTls: false as const };
-  }
-
-  const socket = net.connect({ host: config.host, port: config.port });
-  await new Promise<void>((resolve, reject) => {
-    const onError = (error: Error) => reject(error);
-    socket.once("error", onError);
-    socket.once("connect", () => {
-      socket.off("error", onError);
-      resolve();
-    });
-    setTimeout(() => reject(new Error("SMTP connect timed out.")), SMTP_TIMEOUT_MS);
-  });
-  return { socket, useStartTls: true as const };
-}
-
-async function upgradeToTls(socket: net.Socket, host: string) {
-  const secure = tls.connect({
-    socket,
-    host,
-    servername: host,
-    rejectUnauthorized: false,
-  });
-  await new Promise<void>((resolve, reject) => {
-    const onError = (error: Error) => reject(error);
-    secure.once("error", onError);
-    secure.once("secureConnect", () => {
-      secure.off("error", onError);
-      resolve();
-    });
-    setTimeout(() => reject(new Error("SMTP STARTTLS timed out.")), SMTP_TIMEOUT_MS);
-  });
-  return secure;
 }
 
 async function sendSmtp(config: SmtpConfig, options: MailOptions) {
-  const connected = await connectSocket(config);
-  let socket: net.Socket | tls.TLSSocket = connected.socket;
-  let session = createSmtpSession(socket);
-
-  await session.expect([220]);
-  await session.command(`EHLO ${config.host}`, [250]);
-
-  if (connected.useStartTls) {
-    await session.command("STARTTLS", [220]);
-    socket = await upgradeToTls(socket as net.Socket, config.host);
-    session = createSmtpSession(socket);
-    await session.command(`EHLO ${config.host}`, [250]);
-  }
-
   const user = config.user.trim();
-  const pass = config.pass.trim();
-  // Prefer AUTH PLAIN (same as common SMTP test tools / cPanel Postfix).
-  const plainToken = Buffer.from(`\u0000${user}\u0000${pass}`, "utf8").toString("base64");
+  const fromAddress = formatFromAddress(options.from || config.from, config.fromName);
+  const recipients = normalizeRecipients(options.to);
+  const transporter = createTransporter(config);
+
   try {
-    await session.command(`AUTH PLAIN ${plainToken}`, [235]);
-  } catch (plainError) {
-    try {
-      await session.command("AUTH LOGIN", [334]);
-      await session.command(Buffer.from(user, "utf8").toString("base64"), [334]);
-      await session.command(Buffer.from(pass, "utf8").toString("base64"), [235]);
-    } catch {
-      const detail = plainError instanceof Error ? plainError.message : "Authentication failed";
-      throw new Error(
-        `${detail}. On cPanel this is often (1) wrong saved password — clear the Password field, type it again, Save; or (2) host SMTP lock — create a mailbox on THIS cPanel (e.g. noreply@contracts.valliani.app) and use that host/user, or switch to Gmail SMTP. Port 587 = SSL checkbox OFF; port 465 = SSL ON.`
-      );
-    }
-  }
-
-  // Envelope sender must match authenticated mailbox for most cPanel relays.
-  const mailFrom = extractEmail(user);
-  await session.command(`MAIL FROM:<${mailFrom}>`, [250]);
-
-  for (const recipient of normalizeRecipients(options.to)) {
-    await session.command(`RCPT TO:<${extractEmail(recipient)}>`, [250, 251]);
-  }
-
-  await session.command("DATA", [354]);
-  const message = await createMimeMessage(config, options);
-  socket.write(`${message}\r\n.\r\n`);
-  await session.expect([250]);
-  try {
-    await session.command("QUIT", [221]);
-  } catch {
-    /* ignore quit failures */
-  }
-  socket.end();
-}
-
-async function sendSmtpWithPortFallback(config: SmtpConfig, options: MailOptions) {
-  try {
-    await sendSmtp(config, options);
-    return;
+    await transporter.sendMail({
+      from: fromAddress,
+      to: recipients.join(", "),
+      replyTo: extractEmail(fromAddress),
+      subject: options.subject,
+      text: options.text,
+      html: options.html,
+      envelope: {
+        from: extractEmail(user),
+        to: recipients.map((item) => extractEmail(item)),
+      },
+      attachments: (options.attachments || []).map((attachment) => ({
+        filename: attachment.filename,
+        path: attachment.filePath,
+        contentType: attachment.contentType,
+      })),
+    });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "";
-    const isAuthFail = message.includes("535") || /authentication/i.test(message);
-    // Many cPanel hosts mishandle remote :587 — retry once on :465 SSL.
-    if (isAuthFail && config.port === 587 && !config.host.toLowerCase().includes("gmail.com")) {
-      console.warn("[smtp] 587 auth failed; retrying", config.host, "on 465 SSL");
-      await sendSmtp({ ...config, port: 465, secure: true }, options);
-      return;
-    }
+    const message = error instanceof Error ? error.message : "Unknown SMTP error";
+    console.error("[smtp] send failed", {
+      host: config.host,
+      port: config.port,
+      secure: config.secure,
+      user: config.user.trim(),
+      passLength: config.pass.trim().length,
+      reason: message,
+    });
     throw error;
+  } finally {
+    transporter.close();
   }
 }
 
@@ -458,7 +236,7 @@ export async function sendMail(options: MailOptions): Promise<MailResult> {
   let lastReason = "";
   for (const recipient of recipients) {
     try {
-      await sendSmtpWithPortFallback(config, { ...options, to: recipient });
+      await sendSmtp(config, { ...options, to: recipient });
       sentCount += 1;
     } catch (error) {
       console.error("SMTP send error:", recipient, error);
@@ -487,7 +265,7 @@ export async function sendSmtpTestEmail(to: string, officeId?: string | null) {
   if (!result.sent) return result;
   return {
     sent: true,
-    reason: `OK via ${config.host}:${config.port} (build smtp-v3)`,
+    reason: `OK via ${config.host}:${config.port} (nodemailer starttls)`,
   };
 }
 

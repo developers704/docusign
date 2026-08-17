@@ -75,7 +75,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid email or password, or the office account is inactive." }, { status: 401 });
   }
 
-  // All roles (including admin) must verify a one-time code sent to their email.
+  // Local / when SMTP is unreachable: skip OTP. VM: set REQUIRE_EMAIL_OTP=true.
+  if ((process.env.REQUIRE_EMAIL_OTP || "false").toLowerCase() !== "true") {
+    const response = NextResponse.json({ success: true, role: session.role });
+    setSessionCookie(response, session, remember, request.url);
+    return response;
+  }
+
   const otp = createSecureToken().slice(0, 6).toUpperCase();
   const challenge = await createLoginOtpChallenge({
     pendingSession: {

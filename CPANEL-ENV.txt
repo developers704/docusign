@@ -1,37 +1,29 @@
-# Copy these into cPanel > Setup Node.js App > Environment variables
-# Replace placeholder values before saving.
+﻿# Production / VM environment - copy into server .env or cPanel Node.js App variables.
 
-APP_URL=https://documents.valliani.app
 NODE_ENV=production
+PORT=8080
+HOST=0.0.0.0
 
-ADMIN_NAME=Valliani Network Administrator
-ADMIN_EMAIL=admin@vallianiuniversity.com
-ADMIN_PASSWORD=Valliani@2026!
-SESSION_SECRET=CHANGE-THIS-LONG-RANDOM-SECRET
-OTP_SECRET=CHANGE-THIS-ANOTHER-LONG-RANDOM-SECRET
+APP_URL=https://contracts.valliani.app
+NEXT_PUBLIC_APP_URL=https://contracts.valliani.app
+
+ADMIN_NAME=Valliani Contracts
+ADMIN_EMAIL=contracts@valliani.app
+ADMIN_PASSWORD=CHANGE_ME
+
+SESSION_SECRET=CHANGE_ME_LONG_RANDOM_SECRET
+OTP_SECRET=CHANGE_ME_LONG_RANDOM_SECRET
 REQUIRE_EMAIL_OTP=false
 
-# MySQL (created in cPanel MySQL Databases)
-DATABASE_HOST=localhost
+SMTP_HOST=10.10.10.20
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=contracts@valliani.app
+SMTP_PASS=CHANGE_ME
+EMAIL_FROM="Valliani Contracts <contracts@valliani.app>"
+
+DATABASE_HOST=127.0.0.1
 DATABASE_PORT=3306
-DATABASE_NAME=vallian1_valliani_esign
-DATABASE_USER=vallian1_valliani_esign
-DATABASE_PASSWORD=YOUR-DB-PASSWORD-HERE
-
-# Optional fallback — prefer Settings > Email / SMTP in the app
-# Option A: custom / cPanel mailbox
-SMTP_HOST=mail.documents.valliani.app
-SMTP_PORT=465
-SMTP_SECURE=true
-SMTP_USER=noreply@documents.valliani.app
-SMTP_PASS=SET-IN-CPANEL-ONLY
-EMAIL_FROM=Valliani Documents <noreply@documents.valliani.app>
-
-# Option B: Gmail SMTP (use App Password, not normal Gmail password)
-# Or set this from Settings > Email / SMTP > Gmail SMTP (recommended)
-# SMTP_HOST=smtp.gmail.com
-# SMTP_PORT=465
-# SMTP_SECURE=true
-# SMTP_USER=you@gmail.com
-# SMTP_PASS=your-16-char-app-password
-# EMAIL_FROM=Valliani Documents <you@gmail.com>
+DATABASE_USER=esign_user
+DATABASE_PASSWORD=CHANGE_ME
+DATABASE_NAME=valliani_esign
