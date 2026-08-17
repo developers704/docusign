@@ -75,7 +75,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid email or password, or the office account is inactive." }, { status: 401 });
   }
 
-  // Local / when SMTP is unreachable: skip OTP. VM: set REQUIRE_EMAIL_OTP=true.
+  // REQUIRE_EMAIL_OTP is portal login only (admin/office users). Document signers use /sign/[token] without email OTP.
   if ((process.env.REQUIRE_EMAIL_OTP || "false").toLowerCase() !== "true") {
     const response = NextResponse.json({ success: true, role: session.role });
     setSessionCookie(response, session, remember, request.url);

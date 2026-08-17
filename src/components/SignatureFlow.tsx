@@ -4,7 +4,6 @@
 import { useEffect, useRef, useState } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import { useRouter } from "next/navigation";
-import OtpGate from "./OtpGate";
 import { Icon } from "./Icons";
 import { STYLE_FONTS, ensureSignatureFontsLoaded } from "./CreateSignatureModal";
 import type { DocumentField } from "@/lib/types";
@@ -15,22 +14,17 @@ export default function SignatureFlow({
   token,
   signerName,
   maskedEmail,
-  requireOtp,
-  alreadyVerified,
   fields = [],
   documentTitle = "Document",
 }: {
   token: string;
   signerName: string;
   maskedEmail: string;
-  requireOtp: boolean;
-  alreadyVerified: boolean;
   fields?: DocumentField[];
   documentTitle?: string;
 }) {
   const router = useRouter();
   const padRef = useRef<SignatureCanvas | null>(null);
-  const [verified, setVerified] = useState(alreadyVerified || !requireOtp);
   const [method, setMethod] = useState<Method>("drawn");
   const [typedName, setTypedName] = useState(signerName);
   const [typedStyleId, setTypedStyleId] = useState<string>(STYLE_FONTS[0].id);
@@ -59,8 +53,6 @@ export default function SignatureFlow({
   useEffect(() => {
     ensureSignatureFontsLoaded();
   }, []);
-
-  if (!verified) return <OtpGate token={token} maskedEmail={maskedEmail} onVerified={() => setVerified(true)} />;
 
   function typedSignatureData() {
     const canvas = document.createElement("canvas");

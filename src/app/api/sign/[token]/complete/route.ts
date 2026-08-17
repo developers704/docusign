@@ -85,9 +85,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
   if (isEnvelopeExpired(found.envelope)) return NextResponse.json({ error: "This signing link has expired." }, { status: 410 });
   if (["voided", "declined", "completed"].includes(found.envelope.status)) return NextResponse.json({ error: "This envelope is no longer available for signing." }, { status: 409 });
   if (!canRecipientAct(found.envelope, found.recipient)) return NextResponse.json({ error: "You are not authorized to act at this step yet." }, { status: 409 });
-  if ((process.env.REQUIRE_EMAIL_OTP || "false").toLowerCase() === "true" && !found.recipient.otpVerifiedAt) {
-    return NextResponse.json({ error: "Email verification is required before signing." }, { status: 403 });
-  }
 
   const action = body.action || "sign";
   const actorAction = action === "approve" ? "approved" : action === "acknowledge" ? "acknowledged" : inferRecipientActionType(found.recipient);

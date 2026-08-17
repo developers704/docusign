@@ -80,7 +80,6 @@ export default async function SigningPage({ params }: { params: Promise<{ token:
   const current = getCurrentRecipient(found.envelope);
   const isCurrent = current?.id === found.recipient.id && canRecipientAct(found.envelope, found.recipient);
   const terminal = ["completed", "voided", "declined", "expired"].includes(envelopeStatus);
-  const requireOtp = (process.env.REQUIRE_EMAIL_OTP || "false").toLowerCase() === "true";
   const encodedToken = encodeURIComponent(token);
   const documentSrc = `/api/sign/${encodedToken}/document`;
   const myFields = (found.envelope.fields || []).filter((field) => field.recipientId === found.recipient.id);
@@ -146,8 +145,6 @@ export default async function SigningPage({ params }: { params: Promise<{ token:
                 if (!name || !domain) return found.recipient.email;
                 return `${name.slice(0, 2)}${"*".repeat(Math.max(2, name.length - 2))}@${domain}`;
               })()}
-              requireOtp={requireOtp}
-              alreadyVerified={Boolean(found.recipient.otpVerifiedAt)}
               accentColor={accentColor}
               canSign={canSign}
             />

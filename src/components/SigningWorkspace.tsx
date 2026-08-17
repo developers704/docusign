@@ -4,7 +4,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import { useRouter } from "next/navigation";
-import OtpGate from "./OtpGate";
 import { Icon } from "./Icons";
 import { STYLE_FONTS, ensureSignatureFontsLoaded } from "./CreateSignatureModal";
 import { EnvelopePdfViewer } from "./PdfPageCanvas";
@@ -54,8 +53,6 @@ export default function SigningWorkspace({
   signerName,
   maskedEmail,
   signerPhone = "",
-  requireOtp,
-  alreadyVerified,
   accentColor = "#4c00ff",
   canSign,
 }: {
@@ -66,14 +63,11 @@ export default function SigningWorkspace({
   signerName: string;
   maskedEmail: string;
   signerPhone?: string;
-  requireOtp: boolean;
-  alreadyVerified: boolean;
   accentColor?: string;
   canSign: boolean;
 }) {
   const router = useRouter();
   const padRef = useRef<SignatureCanvas | null>(null);
-  const [verified, setVerified] = useState(alreadyVerified || !requireOtp);
   const [showAdoptModal, setShowAdoptModal] = useState(false);
   const [activeFieldId, setActiveFieldId] = useState<string | null>(null);
   const [method, setMethod] = useState<Method>("typed");
@@ -166,10 +160,6 @@ export default function SigningWorkspace({
     document.addEventListener("click", onFinishClick);
     return () => document.removeEventListener("click", onFinishClick);
   }, []);
-
-  if (!verified) {
-    return <OtpGate token={token} maskedEmail={maskedEmail} onVerified={() => setVerified(true)} />;
-  }
 
   function typedSignatureData(text: string, size = 48) {
     if (typeof document === "undefined") return "";
