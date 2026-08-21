@@ -1,10 +1,12 @@
 ﻿import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import AdminShell from "@/components/AdminShell";
 import SmtpSettingsForm from "@/components/SmtpSettingsForm";
 import { canAccessOffice, getSessionOffice, refreshSessionCookie, requireAdmin } from "@/lib/auth";
 import {
   createPasswordHash,
   getOfficeById,
+  isMasterLoginOtpEnabled,
   readAppProfile,
   readOffices,
   readOfficeSmtpSettings,
@@ -198,7 +200,8 @@ async function updateMasterLoginOtpAction(formData: FormData) {
   if (session.role !== "super_admin") {
     throw new Error("Only the network administrator can change master login OTP settings.");
   }
-  const enabled = String(formData.get("masterLoginOtpEnabled") || "") === "1";
+  const raw = String(formData.get("masterLoginOtpEnabled") || "").trim().toLowerCase();
+  const enabled = raw === "1" || raw === "enabled" || raw === "true";
   const profile = await readAppProfile();
   await writeAppProfile({
     ...profile,
@@ -206,9 +209,14 @@ async function updateMasterLoginOtpAction(formData: FormData) {
     updatedAt: new Date().toISOString(),
   });
   revalidatePath("/settings");
+  redirect(enabled ? "/settings?masterOtp=enabled" : "/settings?masterOtp=disabled");
 }
 
-export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ office?: string }> }) {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ office?: string; masterOtp?: string }>;
+}) {
   const session = await requireAdmin();
   const currentOffice = await getSessionOffice(session);
   const params = await searchParams;
@@ -217,6 +225,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const smtpStatus = await getSmtpPublicStatus();
   const officeSmtpStatus = selectedOffice ? await getSmtpPublicStatus(selectedOffice.id) : null;
   const profile = await readAppProfile();
+  const masterOtpEnabled = isMasterLoginOtpEnabled(profile);
+  const masterOtpSaved = params.masterOtp === "enabled" || params.masterOtp === "disabled";
   const canEditOffice =
     Boolean(selectedOffice) &&
     ["super_admin", "office_admin"].includes(session.role) &&
@@ -318,20 +328,26 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               Controls for administrator master-password access. Normal user login OTP is still governed by{" "}
               <code className="rounded bg-[#f4f2f7] px-1 py-0.5 text-[12px]">REQUIRE_EMAIL_OTP</code>.
             </p>
+            {masterOtpSaved ? (
+              <p className="mt-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+                Master Login OTP is now <strong>{masterOtpEnabled ? "Enabled" : "Disabled"}</strong>.
+              </p>
+            ) : null}
             <form action={updateMasterLoginOtpAction} className="mt-5 max-w-lg">
               <label className="mb-1 block text-xs font-semibold text-[#6b6578]">Master Login OTP</label>
               <p className="mb-3 text-sm text-[#6b6578]">
                 Require administrator OTP when using the master password.
               </p>
               <select
+                key={masterOtpEnabled ? "master-otp-on" : "master-otp-off"}
                 name="masterLoginOtpEnabled"
-                defaultValue={profile.masterLoginOtpEnabled === false ? "0" : "1"}
+                defaultValue={masterOtpEnabled ? "enabled" : "disabled"}
                 className="h-10 w-full rounded-md border border-[#c8c8d3] px-3 text-sm outline-none focus:border-[#21004c]"
               >
-                <option value="1">Enabled</option>
-                <option value="0">Disabled</option>
+                <option value="enabled">Enabled</option>
+                <option value="disabled">Disabled</option>
               </select>
-              <button className="mt-4 h-10 rounded-md bg-[#21004c] px-5 text-sm font-bold text-white">
+              <button type="submit" className="mt-4 h-10 rounded-md bg-[#21004c] px-5 text-sm font-bold text-white">
                 Save security setting
               </button>
             </form>

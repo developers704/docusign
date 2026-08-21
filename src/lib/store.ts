@@ -63,9 +63,26 @@ async function readArray<T>(filePath: string): Promise<T[]> {
 
 async function atomicWrite(filePath: string, value: unknown) {
   await mkdir(DATA_DIRECTORY, { recursive: true });
+  const payload = `${JSON.stringify(value, null, 2)}\n`;
   const temporaryFile = `${filePath}.${process.pid}.${Date.now()}.tmp`;
-  await writeFile(temporaryFile, JSON.stringify(value, null, 2), "utf8");
-  await rename(temporaryFile, filePath);
+  await writeFile(temporaryFile, payload, "utf8");
+  try {
+    await rename(temporaryFile, filePath);
+  } catch (error) {
+    // Windows / OneDrive often blocks rename-over-existing; fall back to direct write.
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === "EPERM" || code === "EEXIST" || code === "EACCES" || code === "EBUSY") {
+      await writeFile(filePath, payload, "utf8");
+      try {
+        const { unlink } = await import("node:fs/promises");
+        await unlink(temporaryFile);
+      } catch {
+        /* ignore temp cleanup */
+      }
+      return;
+    }
+    throw error;
+  }
 }
 
 function enqueueWrite(operation: () => Promise<void>) {
@@ -364,14 +381,18 @@ export async function readAppProfile(): Promise<AppProfileRecord> {
       return fallback;
     }
     if (!parsed || typeof parsed !== "object") return fallback;
+    const rawMasterOtp = (parsed as { masterLoginOtpEnabled?: unknown }).masterLoginOtpEnabled;
+    const masterLoginOtpEnabled =
+      rawMasterOtp === false || rawMasterOtp === "false" || rawMasterOtp === 0 || rawMasterOtp === "0"
+        ? false
+        : true;
     return {
       adminName: String(parsed.adminName || fallback.adminName).trim() || fallback.adminName,
       networkName: String(parsed.networkName || fallback.networkName).trim() || fallback.networkName,
       adminEmail: parsed.adminEmail ? String(parsed.adminEmail).trim().toLowerCase() : undefined,
       adminPasswordSalt: parsed.adminPasswordSalt ? String(parsed.adminPasswordSalt) : undefined,
       adminPasswordHash: parsed.adminPasswordHash ? String(parsed.adminPasswordHash) : undefined,
-      // Missing / undefined => enabled (secure default for older deployments).
-      masterLoginOtpEnabled: parsed.masterLoginOtpEnabled === false ? false : true,
+      masterLoginOtpEnabled,
       updatedAt: String(parsed.updatedAt || ""),
     };
   } catch (error) {
@@ -382,7 +403,17 @@ export async function readAppProfile(): Promise<AppProfileRecord> {
 }
 
 export async function writeAppProfile(profile: AppProfileRecord) {
-  await enqueueWrite(() => atomicWrite(APP_PROFILE_FILE, profile));
+  const payload: AppProfileRecord = {
+    adminName: String(profile.adminName || "").trim() || "Network Administrator",
+    networkName: String(profile.networkName || "").trim() || "Valliani Network",
+    adminEmail: profile.adminEmail ? String(profile.adminEmail).trim().toLowerCase() : undefined,
+    adminPasswordSalt: profile.adminPasswordSalt ? String(profile.adminPasswordSalt) : undefined,
+    adminPasswordHash: profile.adminPasswordHash ? String(profile.adminPasswordHash) : undefined,
+    // Explicit boolean — must persist false when Disabled is saved.
+    masterLoginOtpEnabled: profile.masterLoginOtpEnabled === false ? false : true,
+    updatedAt: profile.updatedAt || new Date().toISOString(),
+  };
+  await enqueueWrite(() => atomicWrite(APP_PROFILE_FILE, payload));
 }
 
 /** Missing value on older deployments must be treated as enabled. */
