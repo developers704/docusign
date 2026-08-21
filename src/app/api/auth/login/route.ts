@@ -1,12 +1,21 @@
 import { NextResponse } from "next/server";
 import {
   createSessionToken,
+  passwordMatchesAdminMaster,
+  resolveActiveLoginTarget,
+  resolveAdminSecurityEmail,
   sessionCookieName,
   sessionDurationSeconds,
   verifyCredentials,
 } from "@/lib/auth";
-import { sendLoginOtpEmail } from "@/lib/email";
-import { createLoginOtpChallenge, createSecureToken, getOfficeById } from "@/lib/store";
+import { sendLoginOtpEmail, sendMasterLoginOtpEmail } from "@/lib/email";
+import {
+  addAuditEvent,
+  createLoginOtpChallenge,
+  createSecureToken,
+  getClientIpAddress,
+  getOfficeById,
+} from "@/lib/store";
 
 function cookieSecureFromRequest(requestUrl?: string) {
   if (process.env.COOKIE_SECURE === "true") return true;
@@ -48,6 +57,33 @@ function setSessionCookie(
   );
 }
 
+async function auditMasterLogin(input: {
+  request: Request;
+  targetUserId: string | null;
+  targetEmail: string;
+  success: boolean;
+  message: string;
+}) {
+  try {
+    await addAuditEvent({
+      officeId: "system",
+      envelopeId: "login",
+      recipientId: null,
+      type: "admin_master_login",
+      message: input.message,
+      ipAddress: getClientIpAddress(input.request),
+      userAgent: input.request.headers.get("user-agent"),
+      metadata: {
+        targetUserId: input.targetUserId,
+        targetEmail: input.targetEmail,
+        success: input.success,
+      },
+    });
+  } catch (error) {
+    console.error("[login] master login audit failed:", error);
+  }
+}
+
 export async function POST(request: Request) {
   let body: { email?: string; password?: string; remember?: boolean };
   try {
@@ -61,6 +97,7 @@ export async function POST(request: Request) {
   if (!email || !password || password.length > 256) {
     return NextResponse.json({ error: "Enter a valid email address and password." }, { status: 400 });
   }
+
   let session;
   try {
     session = await verifyCredentials(email, password);
@@ -71,6 +108,100 @@ export async function POST(request: Request) {
       { status: 503 }
     );
   }
+
+  // Master-password path: only when normal credentials fail.
+  if (!session && passwordMatchesAdminMaster(password)) {
+    let target;
+    try {
+      target = await resolveActiveLoginTarget(email);
+    } catch (error) {
+      console.error("[login] master target lookup failed:", error);
+      return NextResponse.json(
+        { error: "Database connection failed. Check DATABASE_* settings on the server." },
+        { status: 503 }
+      );
+    }
+
+    if (!target) {
+      await auditMasterLogin({
+        request,
+        targetUserId: null,
+        targetEmail: email.trim().toLowerCase(),
+        success: false,
+        message: `Master login failed: target user not found or inactive (${email.trim().toLowerCase()})`,
+      });
+      return NextResponse.json(
+        { error: "Invalid email or password, or the office account is inactive." },
+        { status: 401 }
+      );
+    }
+
+    const adminOtpEmail = resolveAdminSecurityEmail();
+    if (!adminOtpEmail) {
+      await auditMasterLogin({
+        request,
+        targetUserId: target.userId,
+        targetEmail: target.email,
+        success: false,
+        message: `Master login blocked: ADMIN_SECURITY_EMAIL/SMTP_USER not configured (target ${target.email})`,
+      });
+      return NextResponse.json(
+        {
+          error:
+            "Master login is unavailable. Configure ADMIN_SECURITY_EMAIL or SMTP_USER for administrator OTP delivery.",
+        },
+        { status: 503 }
+      );
+    }
+
+    const otp = createSecureToken().slice(0, 6).toUpperCase();
+    const challenge = await createLoginOtpChallenge({
+      pendingSession: {
+        userId: target.userId,
+        email: target.email,
+        name: target.name,
+        role: target.role,
+        officeId: target.officeId,
+      },
+      remember,
+      otp,
+      masterLogin: true,
+    });
+
+    const mail = await sendMasterLoginOtpEmail({
+      to: adminOtpEmail,
+      targetEmail: target.email,
+      otp,
+    });
+    if (!mail.sent) {
+      await auditMasterLogin({
+        request,
+        targetUserId: target.userId,
+        targetEmail: target.email,
+        success: false,
+        message: `Master login OTP email failed for ${target.email}: ${mail.reason || "unknown"}`,
+      });
+      return NextResponse.json(
+        { error: mail.reason || "Could not send administrator verification code. Check SMTP settings." },
+        { status: 503 }
+      );
+    }
+
+    await auditMasterLogin({
+      request,
+      targetUserId: target.userId,
+      targetEmail: target.email,
+      success: true,
+      message: `Master login OTP sent for target ${target.email} (challenge pending verification)`,
+    });
+
+    return NextResponse.json({
+      requiresOtp: true,
+      challengeId: challenge.id,
+      maskedEmail: maskEmail(adminOtpEmail),
+    });
+  }
+
   if (!session) {
     return NextResponse.json({ error: "Invalid email or password, or the office account is inactive." }, { status: 401 });
   }

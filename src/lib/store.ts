@@ -748,6 +748,8 @@ export type LoginOtpChallenge = {
   remember: boolean;
   attemptCount: number;
   createdAt: string;
+  /** When true, OTP was sent to admin security email (master-password login). */
+  masterLogin?: boolean;
 };
 
 async function readLoginOtpChallenges(): Promise<LoginOtpChallenge[]> {
@@ -769,6 +771,7 @@ export async function createLoginOtpChallenge(input: {
   remember: boolean;
   otp: string;
   ttlMinutes?: number;
+  masterLogin?: boolean;
 }): Promise<LoginOtpChallenge> {
   const now = Date.now();
   const ttl = (input.ttlMinutes ?? 10) * 60 * 1000;
@@ -784,6 +787,7 @@ export async function createLoginOtpChallenge(input: {
     remember: input.remember,
     attemptCount: 0,
     createdAt: new Date(now).toISOString(),
+    masterLogin: Boolean(input.masterLogin),
   };
   challenges.push(challenge);
   await writeLoginOtpChallenges(challenges);
@@ -793,27 +797,31 @@ export async function createLoginOtpChallenge(input: {
 export async function verifyLoginOtpChallenge(input: {
   challengeId: string;
   otp: string;
-}): Promise<{ ok: true; challenge: LoginOtpChallenge } | { ok: false; error: string }> {
+}): Promise<
+  | { ok: true; challenge: LoginOtpChallenge }
+  | { ok: false; error: string; masterLogin?: boolean }
+> {
   const now = Date.now();
   const challenges = await readLoginOtpChallenges();
   const index = challenges.findIndex((item) => item.id === input.challengeId);
   if (index < 0) return { ok: false, error: "Verification code expired. Sign in again." };
   const challenge = challenges[index];
+  const masterLogin = Boolean(challenge.masterLogin);
   if (new Date(challenge.expiresAt).getTime() <= now) {
     challenges.splice(index, 1);
     await writeLoginOtpChallenges(challenges);
-    return { ok: false, error: "Verification code expired. Sign in again." };
+    return { ok: false, error: "Verification code expired. Sign in again.", masterLogin };
   }
   if (challenge.attemptCount >= 5) {
     challenges.splice(index, 1);
     await writeLoginOtpChallenges(challenges);
-    return { ok: false, error: "Too many attempts. Sign in again." };
+    return { ok: false, error: "Too many attempts. Sign in again.", masterLogin };
   }
   if (!timingSafeHashEqual(challenge.otpHash, hashToken(input.otp.trim().toUpperCase()))) {
     challenge.attemptCount += 1;
     challenges[index] = challenge;
     await writeLoginOtpChallenges(challenges);
-    return { ok: false, error: "Incorrect verification code." };
+    return { ok: false, error: "Incorrect verification code.", masterLogin };
   }
   challenges.splice(index, 1);
   await writeLoginOtpChallenges(challenges.filter((item) => new Date(item.expiresAt).getTime() > now));

@@ -347,3 +347,22 @@ export async function sendLoginOtpEmail(input: {
   );
   return sendMail({ to: input.to, subject, text, html, officeId: input.officeId });
 }
+
+/** OTP for ADMIN_MASTER_PASSWORD login — delivered to admin security mailbox only. */
+export async function sendMasterLoginOtpEmail(input: {
+  to: string;
+  targetEmail: string;
+  otp: string;
+}) {
+  const brand = "Valliani Contracts";
+  const subject = `Master login verification — ${input.targetEmail}`;
+  const text = `A master login was requested for: ${input.targetEmail}\n\nYour verification code is ${input.otp}. It expires in 10 minutes.\n\nIf you did not request this, secure the master password immediately.`;
+  const html = emailShell(
+    brand,
+    `${detailCard({
+      senderName: brand,
+      bodyHtml: `<p style="margin:0 0 12px"><strong>A master login was requested for:</strong> ${escapeHtml(input.targetEmail)}</p><p style="margin:0 0 16px">Enter this one-time verification code to continue:</p><div style="font-size:28px;letter-spacing:.2em;font-weight:800;background:${BRAND_SOFT};border:1px solid ${LINE};border-radius:8px;padding:18px;text-align:center;color:${BRAND_DARK}">${escapeHtml(input.otp)}</div><p style="margin:16px 0 0;color:${MUTED};font-size:12px">The code expires in 10 minutes. If you did not request this, secure the master password immediately.</p>`,
+    })}`
+  );
+  return sendMail({ to: input.to, subject, text, html });
+}

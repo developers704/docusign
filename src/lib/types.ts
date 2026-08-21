@@ -345,7 +345,8 @@ export type AuditEventType =
   | "token_revoked"
   | "otp_failed"
   | "otp_locked"
-  | "legacy_envelope_normalized";
+  | "legacy_envelope_normalized"
+  | "admin_master_login";
 
 export type AuditEvent = {
   id: string;

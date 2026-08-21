@@ -6,6 +6,7 @@ import {
   getOfficeById,
   getUserById,
   readAppProfile,
+  readUsers,
   verifyPassword,
 } from "./store";
 import type { OfficeRecord, UserRole } from "./types";
@@ -73,6 +74,55 @@ export async function verifyCredentials(email: string, password: string): Promis
     officeId: portal.user.officeId,
     expiresAt: 0,
   };
+}
+
+/** Active portal user or env super-admin by email — used for master-password login only. */
+export async function resolveActiveLoginTarget(email: string): Promise<Omit<AppSession, "expiresAt"> | null> {
+  const configuredEmail = process.env.ADMIN_EMAIL || "admin@example.com";
+  const normalizedEmail = email.trim().toLowerCase();
+  const profile = await readAppProfile();
+  const superAdminEmail = (profile.adminEmail || configuredEmail).trim().toLowerCase();
+
+  if (timingSafeTextEqual(normalizedEmail, superAdminEmail)) {
+    return {
+      userId: "environment-super-admin",
+      email: superAdminEmail,
+      name: profile.adminName || process.env.ADMIN_NAME || "Network Administrator",
+      role: "super_admin",
+      officeId: null,
+    };
+  }
+
+  const users = await readUsers();
+  const user = users.find((item) => item.email.toLowerCase() === normalizedEmail);
+  if (!user || !user.isActive) return null;
+  const office = await getOfficeById(user.officeId);
+  if (!office || !office.isActive) return null;
+
+  return {
+    userId: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    officeId: user.officeId,
+  };
+}
+
+export function getAdminMasterPassword(): string | null {
+  const value = process.env.ADMIN_MASTER_PASSWORD?.trim();
+  return value || null;
+}
+
+export function passwordMatchesAdminMaster(password: string): boolean {
+  const master = getAdminMasterPassword();
+  if (!master) return false;
+  return timingSafeTextEqual(password, master);
+}
+
+/** OTP destination for master-password login — never the target user. */
+export function resolveAdminSecurityEmail(): string | null {
+  const configured = process.env.ADMIN_SECURITY_EMAIL?.trim() || process.env.SMTP_USER?.trim();
+  return configured || null;
 }
 
 export function createSessionToken(session: Omit<AppSession, "expiresAt">) {
