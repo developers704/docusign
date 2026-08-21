@@ -70,6 +70,7 @@ export async function POST(request: Request) {
           targetEmail: pendingSession.email,
           success: true,
           phase: "otp_verified",
+          masterLoginOtpEnabled: true,
         },
       });
     } catch (error) {

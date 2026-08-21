@@ -92,6 +92,17 @@ function renderTextToDataUrl(
   return cropped.toDataURL("image/png");
 }
 
+async function waitForSignatureFont(fontFamily: string, fontWeight: number) {
+  ensureSignatureFontsLoaded();
+  if (typeof document === "undefined" || !document.fonts?.load) return;
+  try {
+    await document.fonts.load(`${fontWeight} 54px ${fontFamily}`);
+    await document.fonts.ready;
+  } catch {
+    /* continue with best-available font */
+  }
+}
+
 export function readSavedSignature(userEmail: string): SavedSignature | null {
   if (typeof window === "undefined" || !userEmail) return null;
   try {
@@ -120,10 +131,14 @@ export default function CreateSignatureModal({
   onSaved?: (signature: SavedSignature) => void;
 }) {
   const existing = useMemo(() => readSavedSignature(userEmail), [userEmail]);
-  const [tab, setTab] = useState<"choose" | "draw" | "upload">("choose");
+  const [tab, setTab] = useState<"choose" | "draw" | "upload">(existing?.method || "choose");
   const [fullName, setFullName] = useState(existing?.fullName || defaultName);
   const [initials, setInitials] = useState(existing?.initials || nameInitials(defaultName));
-  const [styleId, setStyleId] = useState(existing?.styleId || STYLE_FONTS[0].id);
+  const [styleId, setStyleId] = useState(() => {
+    const savedId = existing?.styleId;
+    if (savedId && STYLE_FONTS.some((item) => item.id === savedId)) return savedId;
+    return STYLE_FONTS[0].id;
+  });
   const [uploaded, setUploaded] = useState<string | null>(existing?.method === "upload" ? existing.signatureDataUrl : null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -136,12 +151,17 @@ export default function CreateSignatureModal({
     ensureSignatureFontsLoaded();
     const seededName = (existing?.fullName || defaultName || "").trim();
     const seededInitials = (existing?.initials || "").trim() || nameInitials(seededName || defaultName);
-    if (!existing) {
-      setFullName(defaultName);
-      setInitials(nameInitials(defaultName));
-    } else if (!String(existing.initials || "").trim()) {
+    if (existing) {
+      setTab(existing.method || "choose");
       setFullName(seededName || defaultName);
       setInitials(seededInitials);
+      if (existing.styleId && STYLE_FONTS.some((item) => item.id === existing.styleId)) {
+        setStyleId(existing.styleId);
+      }
+      if (existing.method === "upload") setUploaded(existing.signatureDataUrl);
+    } else {
+      setFullName(defaultName);
+      setInitials(nameInitials(defaultName));
     }
     return () => {
       document.body.style.overflow = previous;
@@ -167,6 +187,7 @@ export default function CreateSignatureModal({
       let signatureDataUrl = "";
       let initialsDataUrl = "";
       const style = STYLE_FONTS.find((item) => item.id === styleId) || STYLE_FONTS[0];
+      await waitForSignatureFont(style.family, style.weight);
 
       if (tab === "choose") {
         signatureDataUrl = renderTextToDataUrl(fullName.trim(), style.family, 54, 640, 160, style.weight);
@@ -187,6 +208,11 @@ export default function CreateSignatureModal({
         }
         signatureDataUrl = uploaded;
         initialsDataUrl = renderTextToDataUrl(initials.trim(), style.family, 42, 200, 120, style.weight);
+      }
+
+      if (!signatureDataUrl) {
+        setError("Could not create signature. Please try another style.");
+        return;
       }
 
       const saved: SavedSignature = {
@@ -286,6 +312,7 @@ export default function CreateSignatureModal({
                     <label
                       key={style.id}
                       className="flex cursor-pointer items-center gap-3"
+                      onClick={() => setStyleId(style.id)}
                     >
                       <input
                         type="radio"
@@ -297,7 +324,7 @@ export default function CreateSignatureModal({
                       <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row">
                         <div
                           className={`relative min-h-[72px] flex-1 overflow-hidden rounded-[2px] border px-3 py-3 ${
-                            selected ? "border-[#4c00ff]" : "border-[#c6c6c6]"
+                            selected ? "border-[#4c00ff] ring-1 ring-[#4c00ff]/40" : "border-[#c6c6c6]"
                           }`}
                         >
                           <span className="absolute -top-2 left-3 bg-white px-1 text-[10px] text-[#666]">Signed by:</span>
@@ -311,7 +338,7 @@ export default function CreateSignatureModal({
                         </div>
                         <div
                           className={`relative flex h-[72px] w-full shrink-0 items-center justify-center overflow-hidden rounded-[2px] border sm:w-[100px] ${
-                            selected ? "border-[#4c00ff]" : "border-[#c6c6c6]"
+                            selected ? "border-[#4c00ff] ring-1 ring-[#4c00ff]/40" : "border-[#c6c6c6]"
                           }`}
                         >
                           <span className="absolute -top-2 left-2 bg-white px-1 text-[10px] text-[#666]">DS</span>

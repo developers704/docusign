@@ -81,17 +81,27 @@ function WelcomeProfileBlock({
       </div>
 
       {hasSignature ? (
-        <button
-          type="button"
-          onClick={onEditSignature}
-          className={`mt-2 inline-flex h-8 items-center rounded-[2px] border border-white/80 px-3 text-[12px] font-semibold text-white transition hover:bg-white/10 ${
-            layout === "mobile"
-              ? "opacity-100"
-              : "pointer-events-none opacity-0 group-hover/profile:pointer-events-auto group-hover/profile:opacity-100"
-          }`}
-        >
-          Edit signature
-        </button>
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={savedSignature!.signatureDataUrl}
+            alt="Your saved signature"
+            className={`mt-3 max-h-10 object-contain object-left ${
+              layout === "mobile" ? "max-w-[220px] brightness-0 invert" : "max-w-[180px] brightness-0 invert"
+            }`}
+          />
+          <button
+            type="button"
+            onClick={onEditSignature}
+            className={`mt-2 inline-flex h-8 items-center rounded-[2px] border border-white/80 px-3 text-[12px] font-semibold text-white transition hover:bg-white/10 ${
+              layout === "mobile"
+                ? "opacity-100"
+                : "pointer-events-none opacity-0 group-hover/profile:pointer-events-auto group-hover/profile:opacity-100"
+            }`}
+          >
+            Edit signature
+          </button>
+        </>
       ) : (
         <button
           type="button"

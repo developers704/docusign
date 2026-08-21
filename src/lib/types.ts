@@ -563,6 +563,11 @@ export type AppProfileRecord = {
   /** Optional password override for env-based super admin. */
   adminPasswordSalt?: string;
   adminPasswordHash?: string;
+  /**
+   * When true (default), ADMIN_MASTER_PASSWORD login requires OTP to ADMIN_SECURITY_EMAIL.
+   * Missing value on older deployments must be treated as enabled.
+   */
+  masterLoginOtpEnabled?: boolean;
   updatedAt: string;
 };
 

@@ -350,6 +350,7 @@ export async function readAppProfile(): Promise<AppProfileRecord> {
   const fallback: AppProfileRecord = {
     adminName: process.env.ADMIN_NAME || "Network Administrator",
     networkName: process.env.NETWORK_NAME || "Valliani Network",
+    masterLoginOtpEnabled: true,
     updatedAt: "",
   };
   try {
@@ -369,6 +370,8 @@ export async function readAppProfile(): Promise<AppProfileRecord> {
       adminEmail: parsed.adminEmail ? String(parsed.adminEmail).trim().toLowerCase() : undefined,
       adminPasswordSalt: parsed.adminPasswordSalt ? String(parsed.adminPasswordSalt) : undefined,
       adminPasswordHash: parsed.adminPasswordHash ? String(parsed.adminPasswordHash) : undefined,
+      // Missing / undefined => enabled (secure default for older deployments).
+      masterLoginOtpEnabled: parsed.masterLoginOtpEnabled === false ? false : true,
       updatedAt: String(parsed.updatedAt || ""),
     };
   } catch (error) {
@@ -380,6 +383,11 @@ export async function readAppProfile(): Promise<AppProfileRecord> {
 
 export async function writeAppProfile(profile: AppProfileRecord) {
   await enqueueWrite(() => atomicWrite(APP_PROFILE_FILE, profile));
+}
+
+/** Missing value on older deployments must be treated as enabled. */
+export function isMasterLoginOtpEnabled(profile: { masterLoginOtpEnabled?: boolean } | null | undefined) {
+  return profile?.masterLoginOtpEnabled !== false;
 }
 
 export async function authenticatePortalUser(email: string, password: string) {

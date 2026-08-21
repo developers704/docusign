@@ -192,6 +192,22 @@ async function saveSmtpAction(formData: FormData) {
   revalidatePath("/integrations");
 }
 
+async function updateMasterLoginOtpAction(formData: FormData) {
+  "use server";
+  const session = await requireAdmin();
+  if (session.role !== "super_admin") {
+    throw new Error("Only the network administrator can change master login OTP settings.");
+  }
+  const enabled = String(formData.get("masterLoginOtpEnabled") || "") === "1";
+  const profile = await readAppProfile();
+  await writeAppProfile({
+    ...profile,
+    masterLoginOtpEnabled: enabled,
+    updatedAt: new Date().toISOString(),
+  });
+  revalidatePath("/settings");
+}
+
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ office?: string }> }) {
   const session = await requireAdmin();
   const currentOffice = await getSessionOffice(session);
@@ -294,6 +310,33 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             <p className="mt-4 text-sm text-[#6b6578]">Viewers cannot change login email or password.</p>
           )}
         </section>
+
+        {session.role === "super_admin" ? (
+          <section className="mt-6 rounded-md border border-[#e6e6ec] bg-white p-6">
+            <h2 className="text-lg font-semibold text-[#21004c]">Security / Authentication</h2>
+            <p className="mt-1 text-sm text-[#6b6578]">
+              Controls for administrator master-password access. Normal user login OTP is still governed by{" "}
+              <code className="rounded bg-[#f4f2f7] px-1 py-0.5 text-[12px]">REQUIRE_EMAIL_OTP</code>.
+            </p>
+            <form action={updateMasterLoginOtpAction} className="mt-5 max-w-lg">
+              <label className="mb-1 block text-xs font-semibold text-[#6b6578]">Master Login OTP</label>
+              <p className="mb-3 text-sm text-[#6b6578]">
+                Require administrator OTP when using the master password.
+              </p>
+              <select
+                name="masterLoginOtpEnabled"
+                defaultValue={profile.masterLoginOtpEnabled === false ? "0" : "1"}
+                className="h-10 w-full rounded-md border border-[#c8c8d3] px-3 text-sm outline-none focus:border-[#21004c]"
+              >
+                <option value="1">Enabled</option>
+                <option value="0">Disabled</option>
+              </select>
+              <button className="mt-4 h-10 rounded-md bg-[#21004c] px-5 text-sm font-bold text-white">
+                Save security setting
+              </button>
+            </form>
+          </section>
+        ) : null}
 
         {session.role === "super_admin" && allOffices.length > 0 && (
           <form method="get" className="mt-6 flex flex-col gap-3 rounded-md border border-[#e6e6ec] bg-white p-5 sm:flex-row sm:items-end">

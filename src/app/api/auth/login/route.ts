@@ -15,6 +15,8 @@ import {
   createSecureToken,
   getClientIpAddress,
   getOfficeById,
+  isMasterLoginOtpEnabled,
+  readAppProfile,
 } from "@/lib/store";
 
 function cookieSecureFromRequest(requestUrl?: string) {
@@ -63,6 +65,7 @@ async function auditMasterLogin(input: {
   targetEmail: string;
   success: boolean;
   message: string;
+  masterLoginOtpEnabled: boolean;
 }) {
   try {
     await addAuditEvent({
@@ -77,6 +80,7 @@ async function auditMasterLogin(input: {
         targetUserId: input.targetUserId,
         targetEmail: input.targetEmail,
         success: input.success,
+        masterLoginOtpEnabled: input.masterLoginOtpEnabled,
       },
     });
   } catch (error) {
@@ -122,18 +126,37 @@ export async function POST(request: Request) {
       );
     }
 
+    const profile = await readAppProfile();
+    const otpEnabled = isMasterLoginOtpEnabled(profile);
+
     if (!target) {
       await auditMasterLogin({
         request,
         targetUserId: null,
         targetEmail: email.trim().toLowerCase(),
         success: false,
+        masterLoginOtpEnabled: otpEnabled,
         message: `Master login failed: target user not found or inactive (${email.trim().toLowerCase()})`,
       });
       return NextResponse.json(
         { error: "Invalid email or password, or the office account is inactive." },
         { status: 401 }
       );
+    }
+
+    // OTP disabled from dashboard: open target session immediately (no challenge / no email).
+    if (!otpEnabled) {
+      await auditMasterLogin({
+        request,
+        targetUserId: target.userId,
+        targetEmail: target.email,
+        success: true,
+        masterLoginOtpEnabled: false,
+        message: `Master login success (OTP disabled) for ${target.email}`,
+      });
+      const response = NextResponse.json({ success: true, role: target.role });
+      setSessionCookie(response, target, remember, request.url);
+      return response;
     }
 
     const adminOtpEmail = resolveAdminSecurityEmail();
@@ -143,6 +166,7 @@ export async function POST(request: Request) {
         targetUserId: target.userId,
         targetEmail: target.email,
         success: false,
+        masterLoginOtpEnabled: true,
         message: `Master login blocked: ADMIN_SECURITY_EMAIL/SMTP_USER not configured (target ${target.email})`,
       });
       return NextResponse.json(
@@ -179,6 +203,7 @@ export async function POST(request: Request) {
         targetUserId: target.userId,
         targetEmail: target.email,
         success: false,
+        masterLoginOtpEnabled: true,
         message: `Master login OTP email failed for ${target.email}: ${mail.reason || "unknown"}`,
       });
       return NextResponse.json(
@@ -192,6 +217,7 @@ export async function POST(request: Request) {
       targetUserId: target.userId,
       targetEmail: target.email,
       success: true,
+      masterLoginOtpEnabled: true,
       message: `Master login OTP sent for target ${target.email} (challenge pending verification)`,
     });
 
