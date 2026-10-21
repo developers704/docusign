@@ -171,8 +171,8 @@ export default function TemplateRowActions({
               {canManage && (
                 <form action={duplicateAction}>
                   <input type="hidden" name="templateId" value={template.id} />
-                  <button type="submit" className={itemClass}>
-                    Copy
+                  <button type="submit" className={itemClass} title="Create a draft copy you can edit and save">
+                    Duplicate
                   </button>
                 </form>
               )}

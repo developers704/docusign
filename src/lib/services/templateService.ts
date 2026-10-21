@@ -1,11 +1,13 @@
 import crypto from "node:crypto";
-import { unlink } from "node:fs/promises";
+import { copyFile, mkdir, unlink } from "node:fs/promises";
 import path from "node:path";
 import { addAuditEvent } from "@/lib/store";
 import { createJsonTemplateRepositories, TEMPLATE_SCHEMA_VERSION } from "@/lib/repositories/jsonTemplateRepositories";
 import type { TemplateListFilter, TemplateRepositories } from "@/lib/repositories/templateRepositories";
 import type {
   AuditEventType,
+  TemplateDocumentRecord,
+  TemplateFieldRecord,
   TemplatePageAssignmentRecord,
   TemplateRecipientRoleRecord,
   TemplateRecord,
@@ -345,6 +347,8 @@ export class TemplateService {
     const templateId = crypto.randomUUID();
     const newVersionId = crypto.randomUUID();
     const roleIdMapping = new Map<string, string>();
+    const documentIdMapping = new Map<string, string>();
+
     const roles = source.recipientRoles.map((role) => {
       const id = crypto.randomUUID();
       roleIdMapping.set(role.id, id);
@@ -357,8 +361,80 @@ export class TemplateService {
         updatedAt: now,
       };
     });
+
+    const storageDir = path.join(process.cwd(), "storage", "offices", source.officeId, "templates");
+    await mkdir(storageDir, { recursive: true });
+
+    const documents: TemplateDocumentRecord[] = [];
+    for (let index = 0; index < (source.documents || []).length; index += 1) {
+      const doc = source.documents[index];
+      const newDocId = crypto.randomUUID();
+      documentIdMapping.set(doc.id, newDocId);
+
+      const storedFileName = `${crypto.randomUUID()}.pdf`;
+      const relativePath = `storage/offices/${source.officeId}/templates/${storedFileName}`;
+      const sourceAbsolute = path.isAbsolute(doc.filePath)
+        ? doc.filePath
+        : path.join(process.cwd(), doc.filePath);
+      const targetAbsolute = path.join(storageDir, storedFileName);
+      try {
+        await copyFile(sourceAbsolute, targetAbsolute);
+      } catch {
+        // Missing source file: keep metadata so the copy is still editable; upload can replace it.
+      }
+
+      documents.push({
+        ...doc,
+        id: newDocId,
+        templateId,
+        versionId: newVersionId,
+        storedFileName,
+        filePath: relativePath,
+        sortOrder: index + 1,
+        createdAt: now,
+      });
+    }
+
+    const fields: TemplateFieldRecord[] = (source.fields || []).map((field) => ({
+      ...field,
+      id: crypto.randomUUID(),
+      templateId,
+      versionId: newVersionId,
+      documentId: field.documentId ? documentIdMapping.get(field.documentId) || null : null,
+      recipientRoleId: field.recipientRoleId ? roleIdMapping.get(field.recipientRoleId) || null : null,
+      createdAt: now,
+      updatedAt: now,
+    }));
+
+    const pageAssignments: TemplatePageAssignmentRecord[] = (source.pageAssignments || []).map((assignment) => ({
+      ...assignment,
+      id: crypto.randomUUID(),
+      templateId,
+      versionId: newVersionId,
+      documentId: assignment.documentId ? documentIdMapping.get(assignment.documentId) || null : null,
+      assignedRoleIds: assignment.assignedRoleIds.map((roleId) => roleIdMapping.get(roleId) || roleId),
+    }));
+
+    const version: TemplateVersionRecord = {
+      id: newVersionId,
+      templateId,
+      versionNumber: 1,
+      title: source.title,
+      message: source.message,
+      description: source.description,
+      documentMetadata: documents,
+      recipientRoles: roles,
+      fields,
+      pageAssignments,
+      createdByUserId: input.actor.userId,
+      createdAt: now,
+      changeSummary: `Duplicated from “${source.name}”`,
+      isCurrent: true,
+    };
+
     const duplicate: TemplateRecord = {
       ...source,
+      schemaVersion: source.schemaVersion || TEMPLATE_SCHEMA_VERSION,
       id: templateId,
       ownerUserId: input.actor.userId,
       name: `${source.name} (Copy)`,
@@ -368,48 +444,15 @@ export class TemplateService {
       currentVersionId: newVersionId,
       usageCount: 0,
       recipientRoles: roles,
-      fields: source.fields.map((field) => ({
-        ...field,
-        id: crypto.randomUUID(),
-        templateId,
-        versionId: newVersionId,
-        recipientRoleId: field.recipientRoleId ? roleIdMapping.get(field.recipientRoleId) || null : null,
-      })),
-      pageAssignments: source.pageAssignments.map((assignment) => ({
-        ...assignment,
-        id: crypto.randomUUID(),
-        templateId,
-        versionId: newVersionId,
-        assignedRoleIds: assignment.assignedRoleIds.map((roleId) => roleIdMapping.get(roleId) || roleId),
-      })),
-      documents: source.documents.map((doc, index) => ({
-        ...doc,
-        id: crypto.randomUUID(),
-        templateId,
-        versionId: newVersionId,
-        sortOrder: index + 1,
-      })),
-      versions: [
-        {
-          id: newVersionId,
-          templateId,
-          versionNumber: 1,
-          title: source.title,
-          message: source.message,
-          description: source.description,
-          documentMetadata: source.documents,
-          recipientRoles: roles,
-          fields: source.fields,
-          pageAssignments: source.pageAssignments,
-          createdByUserId: input.actor.userId,
-          createdAt: now,
-          changeSummary: `Duplicated from template ${source.id}`,
-          isCurrent: true,
-        },
-      ],
+      fields,
+      pageAssignments,
+      documents,
+      versions: [version],
+      folderIds: [...(source.folderIds || [])],
       createdAt: now,
       updatedAt: now,
     };
+
     const created = await this.repos.templates.create(duplicate);
     await addAuditEvent({
       officeId: created.officeId,

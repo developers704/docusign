@@ -88,8 +88,14 @@ async function duplicateTemplateAction(formData: FormData) {
   const templateId = String(formData.get("templateId") || "");
   const template = await service.getById(templateId);
   if (!template || !canAccessOffice(session, template.officeId)) return;
-  await service.duplicateTemplate({ actor: { userId: session.userId, email: session.email }, template });
+  const copy = await service.duplicateTemplate({
+    actor: { userId: session.userId, email: session.email },
+    template,
+  });
   revalidatePath("/templates");
+  revalidatePath(`/templates/${copy.id}/edit`);
+  // Open the copy so admin/office users can change and save their own version.
+  redirect(`/templates/${copy.id}/edit`);
 }
 
 async function updateTemplateStatusAction(formData: FormData) {

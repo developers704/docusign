@@ -135,12 +135,18 @@ export default function TemplateCard({
             Edit
           </Link>
         )}
-        <form action={duplicateAction}>
-          <input type="hidden" name="templateId" value={template.id} />
-          <button type="submit" className="rounded-xl border border-[#ddd5e5] px-4 py-2 text-sm font-semibold">
-            Duplicate
-          </button>
-        </form>
+        {canManage ? (
+          <form action={duplicateAction}>
+            <input type="hidden" name="templateId" value={template.id} />
+            <button
+              type="submit"
+              className="rounded-xl border border-[#ddd5e5] px-4 py-2 text-sm font-semibold"
+              title="Create a draft copy you can edit and save"
+            >
+              Duplicate
+            </button>
+          </form>
+        ) : null}
         <button
           type="button"
           onClick={() => setManageOpen((open) => !open)}
