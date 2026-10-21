@@ -1,22 +1,22 @@
 ﻿================================================================================
   COMPANY E-SIGN — A2 HOSTING / cPanel UPLOAD GUIDE
-  (Upload karo, settings set karo, chal jayega — server par build mat karo)
+  (Upload the package, set environment variables, and start — do not build on the server)
 ================================================================================
 
 IMPORTANT
 ---------
-- Ye package pehle se BUILD ho chuka hai (.next folder included).
-- cPanel par "Run JS script" ya "npm run build" MAT chalao.
-- Server par EK BAAR npm install zaroor chalao (Terminal commands neeche).
+- This package is already built (.next folder included).
+- Do NOT run "Run JS script" or "npm run build" on cPanel.
+- Run "npm install" once on the server (Terminal commands below).
 
 
 STEP 1 — UPLOAD
 ---------------
-1. cPanel > File Manager kholo.
-2. Home directory mein jao (public_html ke BAHAR).
-3. "company-esign-cpanel.zip" upload karo.
-4. ZIP par right-click > Extract.
-5. Extracted folder ka naam "company-esign" rakho (ya jo bhi path use karna ho).
+1. Open cPanel > File Manager.
+2. Go to the home directory (outside public_html).
+3. Upload "company-esign-cpanel.zip".
+4. Right-click the ZIP > Extract.
+5. Keep the extracted folder named "company-esign" (or use whatever path you prefer).
 
 
 STEP 2 — INSTALL + PERMISSIONS (Terminal) — REQUIRED
@@ -27,7 +27,7 @@ cPanel > Terminal:
     npm ci --omit=dev
     chmod 700 data storage storage/offices
 
-Agar npm fail ho to: Setup Node.js App > Run NPM Install > Restart
+If npm fails: Setup Node.js App > Run NPM Install > Restart
 
 
 STEP 3 — NODE.JS APP (cPanel > Setup Node.js App)
@@ -73,7 +73,7 @@ Then click SAVE and RESTART.
 
 STEP 4 — SSL
 ------------
-cPanel > SSL/TLS Status > AutoSSL run karo.
+cPanel > SSL/TLS Status > Run AutoSSL.
 APP_URL must start with https://
 
 
@@ -87,7 +87,7 @@ STEP 5 — TEST
 TROUBLESHOOTING
 ---------------
 Error: "Out of memory" / WebAssembly
-  -> You tried to build on server. Use this pre-built package instead.
+  -> You tried to build on the server. Use this pre-built package instead.
 
 App shows 503 or does not start
   -> Check Startup file is server.js (not next start)

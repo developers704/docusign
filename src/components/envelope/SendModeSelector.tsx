@@ -22,11 +22,26 @@ export default function SendModeSelector({
         />
         Set signing order
       </label>
-      <p className="text-[12px] text-[#666]">
-        {signingOrder
-          ? "Recipients sign in numbered order. When one finishes, the next gets the email."
-          : "All recipients can sign at the same time (no order)."}
-      </p>
+      <div
+        className={`rounded-[2px] border px-3 py-2 text-[12px] leading-5 ${
+          signingOrder
+            ? "border-[#c4b5fd] bg-[#f5f0ff] text-[#3b1d7a]"
+            : "border-[#e5e5e5] bg-[#fafafa] text-[#666]"
+        }`}
+        role="status"
+      >
+        {signingOrder ? (
+          <>
+            <p className="font-semibold">Signing order needs more than one recipient.</p>
+            <p className="mt-1">
+              People sign one after another (1, then 2, then 3…). When one finishes, the next gets the email. Use
+              Multiple recipients and set the numbers.
+            </p>
+          </>
+        ) : (
+          <p>All recipients can sign at the same time (no order).</p>
+        )}
+      </div>
       <div className="flex flex-wrap gap-3 text-[12px]">
         <button
           type="button"

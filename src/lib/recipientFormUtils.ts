@@ -395,20 +395,34 @@ export function validateRecipientForm(input: {
   recipients: RecipientFormInput[];
   signingOrderEnabled: boolean;
   templateRoles: TemplateRecipientRoleRecord[];
+  /**
+   * When false (create → Prepare draft), name/email may be left blank and filled before send.
+   * When true (default), name and a valid email are required on every recipient.
+   */
+  requireContactDetails?: boolean;
 }) {
   const errors: string[] = [];
   const seenEmails = new Set<string>();
+  const requireContact = input.requireContactDetails !== false;
 
   if (!input.recipients.length) {
     errors.push("Add at least one recipient.");
   }
 
   for (const recipient of input.recipients) {
-    if (!recipient.name.trim()) errors.push("Enter the recipient's name.");
-    if (!recipient.email.trim() || !/^\S+@\S+\.\S+$/.test(recipient.email.trim())) {
-      errors.push("Enter a valid email address.");
+    const name = recipient.name.trim();
+    const email = recipient.email.trim();
+    if (requireContact) {
+      if (!name) errors.push("Enter the recipient's name.");
+      if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+        errors.push("Enter a valid email address.");
+      }
+    } else if (email && !/^\S+@\S+\.\S+$/.test(email)) {
+      errors.push(
+        "That email is not valid. Fix it, or leave the email blank and add it later before you send."
+      );
     }
-    const emailKey = recipient.email.trim().toLowerCase();
+    const emailKey = email.toLowerCase();
     if (emailKey && seenEmails.has(emailKey)) errors.push("Two recipients have the same email address.");
     if (emailKey) seenEmails.add(emailKey);
   }

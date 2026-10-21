@@ -4,8 +4,6 @@ import PowerFormEditor from "@/components/powerforms/PowerFormEditor";
 import { canAccessOffice, getSessionOffice, requireAdmin } from "@/lib/auth";
 import { getPowerFormById } from "@/lib/services/powerFormService";
 import { readTemplates } from "@/lib/store";
-import { templateHasSigningFields } from "@/lib/templateSigningFields";
-
 export default async function EditPowerFormPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await requireAdmin();
   const office = await getSessionOffice(session);
@@ -14,14 +12,16 @@ export default async function EditPowerFormPage({ params }: { params: Promise<{ 
   if (!form || !canAccessOffice(session, form.officeId)) notFound();
 
   const templates = (await readTemplates(session.role === "super_admin" ? undefined : session.officeId || undefined)).filter(
-    (item) => item.status === "published" && templateHasSigningFields(item)
+    (item) => item.status === "published" || item.status === "draft" || item.id === form.templateId
   );
 
   return (
     <AdminShell session={session} office={office}>
       <div className="px-8 py-7">
         <h1 className="text-[28px] font-semibold text-[#21004c]">Edit PowerForm</h1>
-        <p className="mt-2 mb-6 text-[14px] text-[#666]">Update intake fields, access, and availability.</p>
+        <p className="mt-2 mb-6 text-[14px] text-[#666]">
+          Change the template, place or update fields, and edit name, description, or access anytime.
+        </p>
         <PowerFormEditor
           templates={templates}
           mode="edit"

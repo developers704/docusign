@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { PowerFormRecord } from "@/lib/types";
 
@@ -15,7 +16,9 @@ export default function PowerFormsAdminList({
   officeNames?: Record<string, string>;
   appUrl: string;
 }) {
+  const router = useRouter();
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
   const rows = useMemo(() => forms, [forms]);
 
   async function copyLink(form: PowerFormRecord) {
@@ -26,6 +29,42 @@ export default function PowerFormsAdminList({
       setTimeout(() => setCopiedId(null), 1500);
     } catch {
       window.prompt("Copy PowerForm link:", url);
+    }
+  }
+
+  async function deleteForm(form: PowerFormRecord) {
+    if (!window.confirm(`Delete PowerForm “${form.name}”? This cannot be undone.`)) return;
+    setBusyId(form.id);
+    try {
+      const response = await fetch(`/api/admin/powerforms/${form.id}`, { method: "DELETE" });
+      const data = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        window.alert(data.error || "Unable to delete PowerForm.");
+        return;
+      }
+      router.refresh();
+    } catch {
+      window.alert("Unable to delete PowerForm.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function duplicateForm(form: PowerFormRecord) {
+    setBusyId(form.id);
+    try {
+      const response = await fetch(`/api/admin/powerforms/${form.id}/duplicate`, { method: "POST" });
+      const data = (await response.json()) as { error?: string; id?: string };
+      if (!response.ok || !data.id) {
+        window.alert(data.error || "Unable to duplicate PowerForm.");
+        return;
+      }
+      router.push(`/powerforms/edit/${data.id}`);
+      router.refresh();
+    } catch {
+      window.alert("Unable to duplicate PowerForm.");
+    } finally {
+      setBusyId(null);
     }
   }
 
@@ -75,18 +114,44 @@ export default function PowerFormsAdminList({
               <td className="px-3 py-4 text-[14px]">{form.accessType.replace(/_/g, " ")}</td>
               <td className="px-3 py-4 text-[14px]">{form.submissionCount}</td>
               <td className="px-3 py-4 text-[13px]">
-                <button type="button" onClick={() => copyLink(form)} className="font-semibold text-[#4c00ff] hover:underline">
+                <button
+                  type="button"
+                  onClick={() => copyLink(form)}
+                  className="inline-flex h-8 items-center rounded-[2px] border border-[#c6c6c6] bg-white px-3 text-[12px] font-semibold text-[#21004c] hover:bg-[#f5f5f5]"
+                >
                   {copiedId === form.id ? "Copied" : "Copy link"}
                 </button>
               </td>
-              <td className="px-3 py-4 text-[13px]">
-                <div className="flex flex-wrap gap-2">
-                  <Link href={`/powerforms/edit/${form.id}`} className="font-semibold text-[#4c00ff] hover:underline">
+              <td className="min-w-[280px] px-3 py-4 text-[13px]">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <Link
+                    href={`/powerforms/edit/${form.id}`}
+                    className="inline-flex h-8 items-center rounded-[2px] border border-[#c6c6c6] bg-white px-3 text-[12px] font-semibold text-[#21004c] hover:bg-[#f5f5f5]"
+                  >
                     Edit
                   </Link>
-                  <Link href={`/powerforms/manage/${form.id}`} className="font-semibold text-[#4c00ff] hover:underline">
+                  <button
+                    type="button"
+                    disabled={busyId === form.id}
+                    onClick={() => duplicateForm(form)}
+                    className="inline-flex h-8 items-center rounded-[2px] border border-[#c6c6c6] bg-white px-3 text-[12px] font-semibold text-[#21004c] hover:bg-[#f5f5f5] disabled:opacity-50"
+                  >
+                    Duplicate
+                  </button>
+                  <Link
+                    href={`/powerforms/manage/${form.id}`}
+                    className="inline-flex h-8 items-center rounded-[2px] bg-[#4c00ff] px-3 text-[12px] font-semibold text-white hover:bg-[#3d00cf]"
+                  >
                     Submissions
                   </Link>
+                  <button
+                    type="button"
+                    disabled={busyId === form.id}
+                    onClick={() => deleteForm(form)}
+                    className="inline-flex h-8 items-center rounded-[2px] border border-[#f5c2c7] bg-[#fff5f5] px-3 text-[12px] font-semibold text-[#b00020] hover:bg-[#ffe8ea] disabled:opacity-50"
+                  >
+                    {busyId === form.id ? "Working…" : "Delete"}
+                  </button>
                 </div>
               </td>
             </tr>

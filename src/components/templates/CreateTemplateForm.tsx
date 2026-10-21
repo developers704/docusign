@@ -286,8 +286,20 @@ export default function CreateTemplateForm({
       return;
     }
 
+    if (signingOrder && recipients.length < 2) {
+      setError(
+        "Signing order needs more than one recipient. Add another recipient, or turn off “Set signing order”."
+      );
+      setOpenRecipients(true);
+      return;
+    }
+
+    const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+    const intent = submitter?.value === "close" ? "close" : "next";
+
     const form = event.currentTarget;
     const formData = new FormData(form);
+    formData.set("intent", intent);
     formData.set("name", templateName.trim());
     formData.set("title", subject.trim() || templateName.trim());
     formData.set("description", description.trim());
@@ -313,21 +325,23 @@ export default function CreateTemplateForm({
     );
     formData.delete("documentFiles");
     for (const file of pendingFiles) formData.append("documentFiles", file);
-  // Edit mode already uploads/deletes via API — avoid wiping those on Save.
-  if (!template?.id) {
-    for (const id of removedIds) formData.append("removeDocumentIds", id);
-  }
+    // Edit mode already uploads/deletes via API — avoid wiping those on Save.
+    if (!template?.id) {
+      for (const id of removedIds) formData.append("removeDocumentIds", id);
+    }
 
     setBusy(true);
     try {
       await submitAction(formData);
-      // Server action redirects to the edit page so the uploaded PDF stays visible in this form.
+      // Same-page save (edit + Next) does not redirect — clear busy and refresh docs.
+      setPendingFiles([]);
       router.refresh();
     } catch (err) {
       const digest =
         typeof err === "object" && err && "digest" in err ? String((err as { digest?: string }).digest || "") : "";
       if (digest.startsWith("NEXT_REDIRECT") || digest.startsWith("NEXT_HTTP_ERROR_FALLBACK")) throw err;
       setError(err instanceof Error ? err.message : "Unable to save template.");
+    } finally {
       setBusy(false);
     }
   }
@@ -519,6 +533,39 @@ export default function CreateTemplateForm({
                   View
                 </button>
               </div>
+              {signingOrder ? (
+                <div
+                  className={`mb-4 rounded-[2px] border px-3 py-2.5 text-[13px] leading-5 ${
+                    recipients.length < 2
+                      ? "border-[#f5c2c7] bg-[#fff5f5] text-[#b00020]"
+                      : "border-[#c4b5fd] bg-[#f5f0ff] text-[#3b1d7a]"
+                  }`}
+                  role="status"
+                >
+                  {recipients.length < 2 ? (
+                    <>
+                      <p className="font-semibold">Signing order needs more than one recipient.</p>
+                      <p className="mt-1">
+                        Order means recipients sign one after another (1, then 2, then 3…). Add at least one more
+                        recipient with <span className="font-semibold">+ Add Recipient</span>, then drag or use the
+                        numbers to set who signs first.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-semibold">Signing order is on.</p>
+                      <p className="mt-1">
+                        Recipients will sign in sequence (lower number first). Drag cards or change the order numbers
+                        so the sequence matches what you need.
+                      </p>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <p className="mb-4 text-[13px] text-[#666]">
+                  Signing order is off — all recipients can sign in any order (in parallel).
+                </p>
+              )}
               <p className="mb-4 text-[13px] text-[#666]">
                 Name and email saved here become defaults when you use this template for a contract — you can still edit them there.
               </p>
@@ -668,17 +715,21 @@ export default function CreateTemplateForm({
       <div className="sticky bottom-0 z-20 flex flex-col-reverse gap-2 border-t border-[#e0e0e0] bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:flex-row sm:items-center sm:justify-end sm:gap-3 sm:px-6 sm:pb-3">
         <button
           type="submit"
+          name="intent"
+          value="close"
           disabled={busy}
           className="h-11 w-full rounded-[2px] border border-[#c6c6c6] bg-white px-4 text-[14px] font-semibold text-[#000] hover:bg-[#f5f5f5] disabled:opacity-60 sm:h-10 sm:w-auto sm:text-[13px]"
         >
-          Save and Close
+          {busy ? "Saving…" : "Save and Close"}
         </button>
         <button
           type="submit"
+          name="intent"
+          value="next"
           disabled={busy}
           className="h-11 w-full rounded-[2px] bg-[#4c00ff] px-5 text-[14px] font-semibold text-white hover:bg-[#3d00cf] disabled:opacity-60 sm:h-10 sm:w-auto sm:text-[13px]"
         >
-          {busy ? "Saving…" : "Next"}
+          {busy ? "Saving…" : isEdit ? "Save" : "Next"}
         </button>
       </div>
 

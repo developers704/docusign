@@ -48,11 +48,24 @@ export async function POST(request: Request) {
       );
     }
 
+    if (template.status === "draft") {
+      const { createTemplateService } = await import("@/lib/services/templateService");
+      template = await createTemplateService().updateStatus({
+        template,
+        nextStatus: "published",
+        actor: { userId: session.userId, role: session.role },
+        skipPublishValidation: true,
+      });
+    }
+
     const form = await createPowerForm({
       template,
-      name: String(body.name || ""),
+      name: String(body.name || template.title || template.name || ""),
       slug: body.slug ? String(body.slug) : undefined,
-      description: String(body.description || ""),
+      description:
+        body.description !== undefined
+          ? String(body.description)
+          : template.description || template.message || "",
       accessType: (body.accessType as "public" | "access_code" | "email_verified") || "public",
       accessCode: body.accessCode ? String(body.accessCode) : undefined,
       collectName: Boolean(body.collectName ?? true),
@@ -60,8 +73,8 @@ export async function POST(request: Request) {
       collectPhone: Boolean(body.collectPhone),
       collectEmployeeId: Boolean(body.collectEmployeeId),
       requireConsent: Boolean(body.requireConsent),
-      consentText: body.consentText ? String(body.consentText) : undefined,
-      successMessage: body.successMessage ? String(body.successMessage) : undefined,
+      consentText: body.consentText !== undefined ? String(body.consentText) : undefined,
+      successMessage: body.successMessage !== undefined ? String(body.successMessage) : undefined,
       submissionLimit:
         body.submissionLimit === null || body.submissionLimit === undefined || body.submissionLimit === ""
           ? null

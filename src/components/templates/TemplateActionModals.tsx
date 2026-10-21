@@ -288,6 +288,7 @@ export function CreatePowerFormModal({
   onClose: () => void;
 }) {
   const ready = templateHasSigningFields(template);
+  const defaultName = template.title || template.name;
   return (
     <DocuSignModal
       title="Create PowerForm"
@@ -297,36 +298,53 @@ export function CreatePowerFormModal({
           <button type="button" onClick={onClose} className="h-9 px-3 text-[13px] font-semibold text-[#000]">
             Cancel
           </button>
-          <button
-            form={`pf-${template.id}`}
-            type="submit"
-            disabled={!ready}
-            className="h-9 rounded-[2px] bg-[#4c00ff] px-4 text-[13px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Create
-          </button>
+          {ready ? (
+            <button
+              form={`pf-${template.id}`}
+              type="submit"
+              className="h-9 rounded-[2px] bg-[#4c00ff] px-4 text-[13px] font-semibold text-white"
+            >
+              Create
+            </button>
+          ) : (
+            <a
+              href={`/powerforms/new?template=${encodeURIComponent(template.id)}`}
+              className="inline-flex h-9 items-center rounded-[2px] bg-[#4c00ff] px-4 text-[13px] font-semibold text-white"
+            >
+              Continue — place fields
+            </a>
+          )}
         </>
       }
     >
-      {ready ? (
-        <p className="text-[14px] text-[#666]">
-          Create a public PowerForm from <span className="font-semibold text-[#000]">{template.name}</span>. Anyone with the
-          link can start signing.
+      <p className="text-[14px] text-[#666]">
+        PowerForm: a public link with intake fields (name, email, access code). Anyone with the link can start signing.
+        Prefills from template <span className="font-semibold text-[#000]">{defaultName}</span>.
+      </p>
+      {!ready ? (
+        <p className="mt-3 rounded-[2px] border border-[#ffe8a3] bg-[#fffbeb] px-3 py-2 text-[14px] text-[#7a5b00]">
+          This template has no Signature/Initial fields yet. Continue to place them, then publish the PowerForm.
         </p>
-      ) : (
-        <p className="rounded-[2px] border border-[#f5c2c7] bg-[#fff5f5] px-3 py-2 text-[14px] text-[#b00020]">
-          Add Signature or Initial fields on this template first (Edit template → place fields), then create the PowerForm.
-        </p>
-      )}
-      <form id={`pf-${template.id}`} action={createAction} className="mt-4">
+      ) : null}
+      <form id={`pf-${template.id}`} action={createAction} className="mt-4 space-y-3">
         <input type="hidden" name="templateId" value={template.id} />
-        <label className="block text-[12px] font-semibold uppercase tracking-wide text-[#666]">PowerForm name</label>
-        <input
-          name="name"
-          defaultValue={template.name}
-          disabled={!ready}
-          className="mt-1 h-10 w-full rounded-[2px] border border-[#c6c6c6] px-3 text-[14px] disabled:bg-[#f7f7f7]"
-        />
+        <div>
+          <label className="block text-[12px] font-semibold uppercase tracking-wide text-[#666]">PowerForm name</label>
+          <input
+            name="name"
+            defaultValue={defaultName}
+            className="mt-1 h-10 w-full rounded-[2px] border border-[#c6c6c6] px-3 text-[14px]"
+          />
+        </div>
+        <div>
+          <label className="block text-[12px] font-semibold uppercase tracking-wide text-[#666]">Description</label>
+          <textarea
+            name="description"
+            rows={2}
+            defaultValue={template.description || template.message || ""}
+            className="mt-1 w-full rounded-[2px] border border-[#c6c6c6] px-3 py-2 text-[14px]"
+          />
+        </div>
       </form>
     </DocuSignModal>
   );
@@ -342,6 +360,9 @@ export function CreateWebFormModal({
   onClose: () => void;
 }) {
   const ready = templateHasSigningFields(template);
+  const defaultName = template.title || template.name;
+  const defaultInstructions =
+    template.description || template.message || "Complete the fields below to begin signing.";
   return (
     <DocuSignModal
       title="Create Web Form"
@@ -351,36 +372,44 @@ export function CreateWebFormModal({
           <button type="button" onClick={onClose} className="h-9 px-3 text-[13px] font-semibold text-[#000]">
             Cancel
           </button>
-          <button
-            form={`wf-${template.id}`}
-            type="submit"
-            disabled={!ready}
-            className="h-9 rounded-[2px] bg-[#4c00ff] px-4 text-[13px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Create
-          </button>
+          {ready ? (
+            <button
+              form={`wf-${template.id}`}
+              type="submit"
+              className="h-9 rounded-[2px] bg-[#4c00ff] px-4 text-[13px] font-semibold text-white"
+            >
+              Create
+            </button>
+          ) : (
+            <a
+              href={`/templates/${encodeURIComponent(template.id)}/edit`}
+              className="inline-flex h-9 items-center rounded-[2px] bg-[#4c00ff] px-4 text-[13px] font-semibold text-white"
+            >
+              Edit template — add fields
+            </a>
+          )}
         </>
       }
     >
-      {ready ? (
-        <p className="text-[14px] text-[#666]">
-          Publish a Web Form for <span className="font-semibold text-[#000]">{template.name}</span>. Recipients fill details
-          online, then sign.
+      <p className="text-[14px] text-[#666]">
+        Web Form: a simple online form for this template. Signers fill details, then sign. Differs from PowerForm (no
+        access codes / advanced intake). Prefills from{" "}
+        <span className="font-semibold text-[#000]">{defaultName}</span>.
+      </p>
+      {!ready ? (
+        <p className="mt-3 rounded-[2px] border border-[#ffe8a3] bg-[#fffbeb] px-3 py-2 text-[14px] text-[#7a5b00]">
+          Add Signature or Initial fields on the template first, then create the Web Form. You can change fields later
+          anytime.
         </p>
-      ) : (
-        <p className="rounded-[2px] border border-[#f5c2c7] bg-[#fff5f5] px-3 py-2 text-[14px] text-[#b00020]">
-          Add Signature or Initial fields on this template first (Edit template → place fields), then create the Web Form.
-        </p>
-      )}
+      ) : null}
       <form id={`wf-${template.id}`} action={createAction} className="mt-4 space-y-3">
         <input type="hidden" name="templateId" value={template.id} />
         <div>
           <label className="block text-[12px] font-semibold uppercase tracking-wide text-[#666]">Web Form name</label>
           <input
             name="name"
-            defaultValue={template.name}
-            disabled={!ready}
-            className="mt-1 h-10 w-full rounded-[2px] border border-[#c6c6c6] px-3 text-[14px] disabled:bg-[#f7f7f7]"
+            defaultValue={defaultName}
+            className="mt-1 h-10 w-full rounded-[2px] border border-[#c6c6c6] px-3 text-[14px]"
           />
         </div>
         <div>
@@ -388,9 +417,8 @@ export function CreateWebFormModal({
           <textarea
             name="instructions"
             rows={3}
-            defaultValue="Complete the fields below to begin signing."
-            disabled={!ready}
-            className="mt-1 w-full rounded-[2px] border border-[#c6c6c6] px-3 py-2 text-[14px] disabled:bg-[#f7f7f7]"
+            defaultValue={defaultInstructions}
+            className="mt-1 w-full rounded-[2px] border border-[#c6c6c6] px-3 py-2 text-[14px]"
           />
         </div>
       </form>

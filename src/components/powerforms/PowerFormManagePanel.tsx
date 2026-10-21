@@ -72,6 +72,45 @@ export default function PowerFormManagePanel({
     }
   }
 
+  async function deleteForm() {
+    if (!window.confirm(`Delete PowerForm “${form.name}”? This cannot be undone.`)) return;
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/admin/powerforms/${form.id}`, { method: "DELETE" });
+      const data = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        setError(data.error || "Unable to delete PowerForm.");
+        return;
+      }
+      router.push("/powerforms");
+      router.refresh();
+    } catch {
+      setError("Unable to delete PowerForm.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function duplicateForm() {
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/admin/powerforms/${form.id}/duplicate`, { method: "POST" });
+      const data = (await response.json()) as { error?: string; id?: string };
+      if (!response.ok || !data.id) {
+        setError(data.error || "Unable to duplicate PowerForm.");
+        return;
+      }
+      router.push(`/powerforms/edit/${data.id}`);
+      router.refresh();
+    } catch {
+      setError("Unable to duplicate PowerForm.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="rounded-lg border border-[#e7e2ec] bg-white p-5">
@@ -96,6 +135,14 @@ export default function PowerFormManagePanel({
             >
               Edit
             </Link>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => duplicateForm()}
+              className="h-9 rounded-[2px] border border-[#c6c6c6] px-3 text-[13px] font-semibold disabled:opacity-60"
+            >
+              Duplicate
+            </button>
             {form.status !== "published" ? (
               <button
                 type="button"
@@ -122,6 +169,14 @@ export default function PowerFormManagePanel({
               className="h-9 rounded-[2px] border border-[#f5c2c7] px-3 text-[13px] font-semibold text-[#b00020] disabled:opacity-60"
             >
               Archive
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => deleteForm()}
+              className="h-9 rounded-[2px] border border-[#b00020] bg-[#fff5f5] px-3 text-[13px] font-semibold text-[#b00020] disabled:opacity-60"
+            >
+              Delete
             </button>
           </div>
         </div>

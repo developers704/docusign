@@ -1,11 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { PowerFormAccessType, PowerFormCustomIntakeField, TemplateRecord } from "@/lib/types";
 import { templateHasSigningFields } from "@/lib/templateSigningFields";
 import TemplateFieldPlacer, { type PlacedFieldPayload } from "@/components/powerforms/TemplateFieldPlacer";
+
+const DEFAULT_SUCCESS = "Thank you. Opening your document to sign…";
+const DEFAULT_CONSENT = "I agree to use electronic records and signatures.";
+
+function seedFromTemplate(template: TemplateRecord | null | undefined) {
+  if (!template) return { name: "", description: "" };
+  return {
+    name: template.title || template.name || "",
+    description: template.description || template.message || "",
+  };
+}
 
 type Props = {
   templates: TemplateRecord[];
@@ -53,9 +64,9 @@ export default function PowerFormEditor({
     return "";
   });
 
-  const published = useMemo(() => {
+  const selectableTemplates = useMemo(() => {
     return templates
-      .filter((t) => t.status === "published")
+      .filter((t) => t.status === "published" || t.status === "draft")
       .filter((t) => (officeFilter ? t.officeId === officeFilter : true))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [templates, officeFilter]);
@@ -63,7 +74,11 @@ export default function PowerFormEditor({
   const [templateId, setTemplateId] = useState(
     initial?.templateId ||
       defaultTemplateId ||
-      templates.find((t) => t.status === "published" && (!defaultOfficeId || t.officeId === defaultOfficeId))?.id ||
+      templates.find(
+        (t) =>
+          (t.status === "published" || t.status === "draft") &&
+          (!defaultOfficeId || t.officeId === defaultOfficeId)
+      )?.id ||
       ""
   );
   const selectedTemplate = useMemo(
@@ -72,9 +87,14 @@ export default function PowerFormEditor({
   );
   const [placedFields, setPlacedFields] = useState<PlacedFieldPayload[]>([]);
   const [placedHasSigning, setPlacedHasSigning] = useState(false);
-  const [name, setName] = useState(initial?.name || "");
+  const [fieldsDirty, setFieldsDirty] = useState(false);
+  const [fieldsReady, setFieldsReady] = useState(false);
+  const seeded = seedFromTemplate(
+    templates.find((t) => t.id === (initial?.templateId || defaultTemplateId)) || null
+  );
+  const [name, setName] = useState(initial?.name || seeded.name);
   const [slug, setSlug] = useState(initial?.slug || "");
-  const [description, setDescription] = useState(initial?.description || "");
+  const [description, setDescription] = useState(initial?.description ?? seeded.description);
   const [accessType, setAccessType] = useState<PowerFormAccessType>(initial?.accessType || "public");
   const [accessCode, setAccessCode] = useState("");
   const [collectName, setCollectName] = useState(initial?.collectName ?? true);
@@ -82,9 +102,11 @@ export default function PowerFormEditor({
   const [collectPhone, setCollectPhone] = useState(initial?.collectPhone ?? false);
   const [collectEmployeeId, setCollectEmployeeId] = useState(initial?.collectEmployeeId ?? false);
   const [requireConsent, setRequireConsent] = useState(initial?.requireConsent ?? false);
-  const [consentText, setConsentText] = useState(initial?.consentText || "I agree to use electronic records and signatures.");
+  const [consentText, setConsentText] = useState(
+    initial?.consentText !== undefined ? initial.consentText : DEFAULT_CONSENT
+  );
   const [successMessage, setSuccessMessage] = useState(
-    initial?.successMessage || "Thank you. Opening your document to sign…"
+    initial?.successMessage !== undefined ? initial.successMessage : DEFAULT_SUCCESS
   );
   const [submissionLimit, setSubmissionLimit] = useState(
     initial?.submissionLimit != null ? String(initial.submissionLimit) : ""
@@ -106,13 +128,22 @@ export default function PowerFormEditor({
 
   function onOfficeChange(nextOfficeId: string) {
     setOfficeFilter(nextOfficeId);
-    const nextPublished = templates.filter(
-      (t) => t.status === "published" && (nextOfficeId ? t.officeId === nextOfficeId : true)
+    const nextList = templates.filter(
+      (t) =>
+        (t.status === "published" || t.status === "draft") &&
+        (nextOfficeId ? t.officeId === nextOfficeId : true)
     );
-    if (!nextPublished.some((t) => t.id === templateId)) {
-      setTemplateId(nextPublished[0]?.id || "");
+    if (!nextList.some((t) => t.id === templateId)) {
+      setTemplateId(nextList[0]?.id || "");
     }
   }
+
+  useEffect(() => {
+    if (mode !== "create" || initial?.name) return;
+    const seed = seedFromTemplate(selectedTemplate);
+    setName(seed.name);
+    setDescription(seed.description);
+  }, [mode, initial?.name, selectedTemplate]);
 
   async function onSubmit(event: FormEvent, asPublish?: boolean) {
     event.preventDefault();
@@ -120,17 +151,21 @@ export default function PowerFormEditor({
     setError("");
     try {
       if (!templateId) {
-        setError("Select a published template.");
+        setError("Select a template.");
         setBusy(false);
         return;
       }
-      if (mode === "create") {
-        if (!placedHasSigning || !placedFields.length) {
-          setError("Document pe Signature ya Initials field wahan place karein jahan sign chahiye.");
-          setBusy(false);
-          return;
-        }
+      const templateAlreadyReady = selectedTemplate ? templateHasSigningFields(selectedTemplate) : false;
+      if (!placedHasSigning && !templateAlreadyReady) {
+        setError("Place a Signature or Initials field on the document where the signer should sign.");
+        setBusy(false);
+        return;
       }
+      const templateChanged = mode === "edit" && initial?.templateId && templateId !== initial.templateId;
+      const shouldReplaceFields =
+        placedFields.length > 0 &&
+        placedHasSigning &&
+        (mode === "create" || fieldsDirty || Boolean(templateChanged));
       const payload = {
         templateId,
         name,
@@ -148,8 +183,8 @@ export default function PowerFormEditor({
         submissionLimit: submissionLimit ? Number(submissionLimit) : null,
         customIntakeFields: customFields,
         publish: asPublish ?? publish,
-        placedFields: mode === "create" ? placedFields : undefined,
-        replaceTemplateFields: mode === "create",
+        placedFields: shouldReplaceFields ? placedFields : undefined,
+        replaceTemplateFields: shouldReplaceFields,
       };
       const url = mode === "create" ? "/api/admin/powerforms" : `/api/admin/powerforms/${initial!.id}`;
       const response = await fetch(url, {
@@ -176,7 +211,8 @@ export default function PowerFormEditor({
       <section className="rounded-lg border border-[#e7e2ec] bg-white p-5">
         <h2 className="text-[16px] font-semibold text-[#21004c]">1. Workspace & template</h2>
         <p className="mt-1 text-[13px] text-[#6b6578]">
-          Choose a workspace and published template. If the template has no signature fields, add them below.
+          Choose a workspace and template. Place or change Signature/Initial fields below — you can update them later
+          anytime.
         </p>
 
         {offices.length > 0 ? (
@@ -202,42 +238,56 @@ export default function PowerFormEditor({
         <select
           required
           value={templateId}
-          onChange={(e) => setTemplateId(e.target.value)}
-          disabled={mode === "edit"}
+          onChange={(e) => {
+            setTemplateId(e.target.value);
+            setFieldsReady(false);
+            setFieldsDirty(mode === "edit");
+            setPlacedFields([]);
+            setPlacedHasSigning(false);
+          }}
           className="mt-1 h-10 w-full rounded-[2px] border border-[#c6c6c6] px-3 text-[14px]"
         >
           <option value="">Select template…</option>
-          {published.map((template) => (
+          {selectableTemplates.map((template) => (
             <option key={template.id} value={template.id}>
               {template.name}
+              {template.status === "draft" ? " (draft)" : ""}
               {officeNames[template.officeId] ? ` · ${officeNames[template.officeId]}` : ""}
               {templateHasSigningFields(template) ? "" : " (add fields)"}
             </option>
           ))}
         </select>
+        {mode === "edit" ? (
+          <p className="mt-2 text-[12px] text-[#6b6578]">
+            You can switch to another template and place or change Signature/Initial fields below, then save.
+          </p>
+        ) : null}
 
-        {!published.length ? (
+        {!selectableTemplates.length ? (
           <div className="mt-3 rounded border border-[#f5c2c7] bg-[#fff5f5] px-3 py-2 text-[13px] text-[#b00020]">
-            No published templates in this workspace.{" "}
+            No templates in this workspace.{" "}
             <Link href="/templates" className="font-semibold underline">
               Open Templates
             </Link>
           </div>
         ) : null}
 
-        {selectedTemplate && mode === "create" ? (
+        {selectedTemplate ? (
           <div className="mt-4">
             <TemplateFieldPlacer
-              key={selectedTemplate.id}
+              key={`${selectedTemplate.id}-${mode}`}
               template={selectedTemplate}
               onFieldsChange={(nextFields, hasSigning) => {
                 setPlacedFields(nextFields);
                 setPlacedHasSigning(hasSigning);
+                if (!fieldsReady) {
+                  setFieldsReady(true);
+                  return;
+                }
+                setFieldsDirty(true);
               }}
             />
           </div>
-        ) : selectedTemplate && templateHasSigningFields(selectedTemplate) ? (
-          <p className="mt-2 text-[12px] text-emerald-700">Template already has signing fields.</p>
         ) : null}
       </section>
 
@@ -262,6 +312,7 @@ export default function PowerFormEditor({
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
+          placeholder="Optional — leave blank if you do not want a description"
           className="mt-1 w-full rounded-[2px] border border-[#c6c6c6] px-3 py-2 text-[14px]"
         />
       </section>
@@ -372,8 +423,12 @@ export default function PowerFormEditor({
         <input
           value={successMessage}
           onChange={(e) => setSuccessMessage(e.target.value)}
+          placeholder="Optional — leave blank to hide the thank-you text"
           className="mt-1 h-10 w-full rounded-[2px] border border-[#c6c6c6] px-3 text-[14px]"
         />
+        <p className="mt-1 text-[12px] text-[#6b6578]">
+          Default is fine. Clear this field and save if you want no message.
+        </p>
         <label className="mt-3 block text-[12px] font-semibold uppercase text-[#666]">Submission limit (optional)</label>
         <input
           type="number"
@@ -395,7 +450,7 @@ export default function PowerFormEditor({
       <div className="flex flex-wrap gap-3">
         <button
           type="submit"
-          {...(busy || published.length === 0 ? { disabled: true as const } : {})}
+          {...(busy || selectableTemplates.length === 0 ? { disabled: true as const } : {})}
           className="h-10 rounded-[2px] bg-[#4c00ff] px-5 text-[14px] font-semibold text-white disabled:opacity-60"
         >
           {busy ? "Saving…" : mode === "create" ? "Create PowerForm" : "Save changes"}

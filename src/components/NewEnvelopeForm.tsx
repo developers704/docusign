@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import type { OfficeRecord, TemplateRecord, EnvelopeRecord } from "@/lib/types";
 import RecipientList from "@/components/envelope/RecipientList";
 import { Icon } from "@/components/Icons";
+import DocumentPreviewModal from "@/components/templates/DocumentPreviewModal";
+import TemplateDocumentCard from "@/components/templates/TemplateDocumentCard";
 import { UPLOAD_ACCEPT, UPLOAD_HELP_TEXT } from "@/lib/documentImport";
 import { REMINDER_FREQUENCY_OPTIONS } from "@/lib/categoryConstants";
 import ScheduleDateTimeFields, { useDetectedTimeZone } from "@/components/ScheduleDateTimeFields";
@@ -117,6 +119,7 @@ export default function NewEnvelopeForm({
   const [timeZone, setTimeZone] = useDetectedTimeZone();
   const [scheduleAt, setScheduleAt] = useState("");
   const [scheduleSeeded, setScheduleSeeded] = useState(false);
+  const [templateDocPreview, setTemplateDocPreview] = useState<{ fileName: string; src: string } | null>(null);
 
   useEffect(() => {
     const stored = sessionStorage.getItem("esign_notice");
@@ -278,6 +281,7 @@ export default function NewEnvelopeForm({
       recipients: workingRecipients,
       signingOrderEnabled,
       templateRoles: bulkMode ? [] : templateRoles,
+      requireContactDetails: true,
     });
     if (validationErrors.length) {
       setMessage(
@@ -556,15 +560,29 @@ export default function NewEnvelopeForm({
                     </option>
                   ))}
                 </select>
-                {hasTemplateDocuments && (
-                  <ul className="space-y-1 text-[12px] text-[#555]">
-                    {templateDocuments.map((doc) => (
-                      <li key={doc.id} className="rounded border border-[#eee] bg-white px-3 py-2">
-                        {doc.originalFileName} · {doc.pageCount || 1} pages
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                {hasTemplateDocuments && selectedTemplate ? (
+                  <div className="flex flex-wrap gap-3 pt-2">
+                    {templateDocuments
+                      .filter((doc) => Boolean(doc.filePath))
+                      .map((doc) => {
+                        const src = `/api/admin/templates/${selectedTemplate.id}/documents/${doc.id}`;
+                        return (
+                          <TemplateDocumentCard
+                            key={doc.id}
+                            fileName={doc.originalFileName}
+                            pageCount={doc.pageCount}
+                            previewSrc={src}
+                            onPreview={() =>
+                              setTemplateDocPreview({
+                                fileName: doc.originalFileName,
+                                src,
+                              })
+                            }
+                          />
+                        );
+                      })}
+                  </div>
+                ) : null}
               </div>
             )}
 
@@ -863,6 +881,14 @@ export default function NewEnvelopeForm({
           {message}
         </div>
       )}
+
+      {templateDocPreview ? (
+        <DocumentPreviewModal
+          fileName={templateDocPreview.fileName}
+          src={templateDocPreview.src}
+          onClose={() => setTemplateDocPreview(null)}
+        />
+      ) : null}
     </form>
   );
 }

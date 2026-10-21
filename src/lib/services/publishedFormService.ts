@@ -64,14 +64,37 @@ async function resolveTemplatePdf(template: TemplateRecord, officeName: string, 
 export async function createPowerFormFromTemplate(input: {
   template: TemplateRecord;
   name: string;
+  description?: string;
   actor: { userId: string; email: string };
 }) {
   const { createPowerForm } = await import("@/lib/services/powerFormService");
+  const template = await ensureTemplatePublishedForForm(input.template, input.actor);
   return createPowerForm({
-    template: input.template,
-    name: input.name,
+    template,
+    name: input.name || template.title || template.name,
+    description:
+      input.description !== undefined
+        ? input.description
+        : template.description || template.message || "",
     actor: input.actor,
     publish: true,
+  });
+}
+
+async function ensureTemplatePublishedForForm(
+  template: TemplateRecord,
+  actor?: { userId: string; email: string }
+) {
+  if (template.status === "published") return template;
+  if (template.status === "archived") {
+    throw new Error("Archived templates cannot be used for forms.");
+  }
+  const { createTemplateService } = await import("@/lib/services/templateService");
+  return createTemplateService().updateStatus({
+    template,
+    nextStatus: "published",
+    actor: { userId: actor?.userId || template.ownerUserId || "system", role: "super_admin" },
+    skipPublishValidation: true,
   });
 }
 
@@ -82,17 +105,20 @@ export async function createWebFormFromTemplate(input: {
   actor: { userId: string; email: string };
 }) {
   assertTemplateReadyForPublishedForm(input.template);
+  const template = await ensureTemplatePublishedForForm(input.template, input.actor);
   const forms = await readWebForms();
-  const slug = await uniqueSlug(input.name || input.template.name, forms.map((item) => item.slug));
+  const slug = await uniqueSlug(input.name || template.name, forms.map((item) => item.slug));
   const now = new Date().toISOString();
+  const defaultInstructions = template.description || template.message || "";
   const form: WebFormRecord = {
     id: crypto.randomUUID(),
-    officeId: input.template.officeId,
-    templateId: input.template.id,
-    name: (input.name || input.template.name).trim(),
+    officeId: template.officeId,
+    templateId: template.id,
+    name: (input.name || template.title || template.name).trim(),
     slug,
     status: "active",
-    instructions: (input.instructions || "").trim(),
+    instructions:
+      input.instructions !== undefined ? input.instructions : defaultInstructions,
     createdByUserId: input.actor.userId,
     createdByEmail: input.actor.email,
     usageCount: 0,
@@ -102,6 +128,42 @@ export async function createWebFormFromTemplate(input: {
   forms.push(form);
   await writeWebForms(forms);
   return form;
+}
+
+export async function deleteWebForm(id: string) {
+  const forms = await readWebForms();
+  const existing = forms.find((form) => form.id === id);
+  if (!existing) throw new Error("Web Form not found.");
+  await writeWebForms(forms.filter((form) => form.id !== id));
+  return { ok: true as const, id };
+}
+
+/** Clone a Web Form — same template and instructions by default, new slug. */
+export async function duplicateWebForm(
+  id: string,
+  actor: { userId: string; email: string }
+) {
+  const forms = await readWebForms();
+  const existing = forms.find((form) => form.id === id);
+  if (!existing) throw new Error("Web Form not found.");
+  const now = new Date().toISOString();
+  const baseName = existing.name.trim() || "Web Form";
+  const name = `${baseName} (Copy)`;
+  const slug = await uniqueSlug(name, forms.map((item) => item.slug));
+  const copy: WebFormRecord = {
+    ...existing,
+    id: crypto.randomUUID(),
+    name,
+    slug,
+    usageCount: 0,
+    createdByUserId: actor.userId,
+    createdByEmail: actor.email,
+    createdAt: now,
+    updatedAt: now,
+  };
+  forms.push(copy);
+  await writeWebForms(forms);
+  return copy;
 }
 
 export async function launchEnvelopeFromPublishedForm(input: {

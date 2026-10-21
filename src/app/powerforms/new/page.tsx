@@ -37,7 +37,8 @@ export default async function NewPowerFormPage({
       <div className="px-8 py-7">
         <h1 className="text-[28px] font-semibold text-[#21004c]">Create PowerForm</h1>
         <p className="mt-2 mb-6 text-[14px] text-[#666]">
-          Select a workspace and published template, configure intake fields, then share the link.
+          Select a workspace and template (draft or published). Name and description prefills from the template — edit
+          freely. Place or change fields, then share the link.
         </p>
         <PowerFormEditor
           templates={templates}

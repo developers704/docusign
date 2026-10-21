@@ -22,7 +22,7 @@ export default function TemplateDocumentCard({
   pageCount?: number | null;
   previewSrc?: string | null;
   onPreview: () => void;
-  onRemove: () => void;
+  onRemove?: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -92,16 +92,18 @@ export default function TemplateDocumentCard({
             >
               Preview
             </button>
-            <button
-              type="button"
-              className="block w-full px-3 py-2 text-left text-[13px] text-[#b00020] hover:bg-[#fff5f5]"
-              onClick={() => {
-                setMenuOpen(false);
-                onRemove();
-              }}
-            >
-              Delete
-            </button>
+            {onRemove ? (
+              <button
+                type="button"
+                className="block w-full px-3 py-2 text-left text-[13px] text-[#b00020] hover:bg-[#fff5f5]"
+                onClick={() => {
+                  setMenuOpen(false);
+                  onRemove();
+                }}
+              >
+                Delete
+              </button>
+            ) : null}
           </div>
         )}
       </div>

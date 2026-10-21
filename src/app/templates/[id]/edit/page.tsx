@@ -57,7 +57,11 @@ async function updateTemplateAction(formData: FormData) {
 
   revalidatePath("/templates");
   revalidatePath(`/templates/${template.id}/edit`);
-  redirect(`/templates/${template.id}/edit`);
+  const intent = String(formData.get("intent") || "next");
+  if (intent === "close") {
+    redirect("/templates");
+  }
+  // Stay on edit page without redirect — avoids client "Saving…" hang on same-URL redirect.
 }
 
 export default async function EditTemplatePage({ params }: { params: Promise<{ id: string }> }) {

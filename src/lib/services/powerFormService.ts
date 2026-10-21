@@ -72,19 +72,25 @@ export async function createPowerForm(input: CreatePowerFormInput) {
     templateVersionId: input.template.currentVersionId || null,
     name,
     slug,
-    description: input.description || "",
+    description: input.description ?? "",
     status: input.publish ? "published" : "draft",
     accessType: input.accessType || "public",
     recipientMode: input.recipientMode || "self_signer",
     workflowType: "sequential",
-    successMessage: input.successMessage || "Thank you. Opening your document to sign…",
+    successMessage:
+      input.successMessage !== undefined
+        ? input.successMessage
+        : "Thank you. Opening your document to sign…",
     redirectUrl: input.redirectUrl ?? null,
     allowMultipleSubmissions: input.allowMultipleSubmissions ?? true,
     requireEmailVerification: (input.accessType || "public") === "email_verified",
     requireAccessCode: (input.accessType || "public") === "access_code",
     accessCodeHash: null,
     requireConsent: input.requireConsent ?? false,
-    consentText: input.consentText || "I agree to use electronic records and signatures.",
+    consentText:
+      input.consentText !== undefined
+        ? input.consentText
+        : "I agree to use electronic records and signatures.",
     collectName: input.collectName ?? true,
     collectEmail: input.collectEmail ?? true,
     collectPhone: input.collectPhone ?? false,
@@ -196,6 +202,44 @@ export async function getPowerFormBySlug(slug: string) {
   return getPowerFormRepositories().forms.getBySlug(slug);
 }
 
+export async function deletePowerForm(id: string, actor: PowerFormActor) {
+  const repos = getPowerFormRepositories();
+  const existing = await repos.forms.getById(id);
+  if (!existing) throw new Error("PowerForm not found.");
+  void actor;
+  await repos.forms.delete(id);
+  return { ok: true as const, id };
+}
+
+/** Clone a PowerForm — same template/text defaults, new id + unique slug. */
+export async function duplicatePowerForm(id: string, actor: PowerFormActor) {
+  const repos = getPowerFormRepositories();
+  const existing = await repos.forms.getById(id);
+  if (!existing) throw new Error("PowerForm not found.");
+  const now = new Date().toISOString();
+  const baseName = existing.name.trim() || "PowerForm";
+  const name = `${baseName} (Copy)`;
+  const slug = await suggestUniqueSlug(name);
+  const copy = normalizePowerFormRecord({
+    ...existing,
+    schemaVersion: POWERFORM_SCHEMA_VERSION,
+    id: crypto.randomUUID(),
+    name,
+    slug,
+    createdByUserId: actor.userId,
+    createdByEmail: actor.email,
+    submissionCount: 0,
+    usageCount: 0,
+    lastSubmissionAt: null,
+    createdAt: now,
+    updatedAt: now,
+    publishedAt: existing.status === "published" ? now : null,
+    archivedAt: null,
+  });
+  validatePowerFormConfig(copy);
+  return repos.forms.create(copy);
+}
+
 /** Quick create used by template menu — draft published with defaults. */
 export async function createPowerFormFromTemplateQuick(input: {
   templateId: string;
@@ -209,6 +253,7 @@ export async function createPowerFormFromTemplateQuick(input: {
   return createPowerForm({
     template,
     name: input.name,
+    description: template.description || template.message || "",
     actor: input.actor,
     publish: input.publish ?? true,
   });

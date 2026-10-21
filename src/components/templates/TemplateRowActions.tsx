@@ -11,8 +11,6 @@ import {
   ShareToFoldersModal,
   TemplateHistoryModal,
 } from "@/components/templates/TemplateActionModals";
-import { templateHasSigningFields } from "@/lib/templateSigningFields";
-
 type ServerAction = (formData: FormData) => Promise<void>;
 
 function MenuButton({
@@ -85,8 +83,6 @@ export default function TemplateRowActions({
   const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const canCreatePublishedForm = templateHasSigningFields(template);
-
   useEffect(() => {
     if (!open) return;
     function place() {
@@ -182,30 +178,16 @@ export default function TemplateRowActions({
               )}
               <MenuButton
                 onClick={() => {
-                  if (!canCreatePublishedForm) return;
                   setOpen(false);
                   window.location.href = `/powerforms/new?template=${encodeURIComponent(template.id)}`;
                 }}
-                disabled={!canCreatePublishedForm}
-                title={
-                  canCreatePublishedForm
-                    ? undefined
-                    : "Add Signature or Initial fields on this template first"
-                }
+                title="Create a shareable PowerForm from this template (you can place or change fields there)"
               >
                 Create PowerForm
               </MenuButton>
               <MenuButton
-                onClick={() => {
-                  if (!canCreatePublishedForm) return;
-                  openModal("webform");
-                }}
-                disabled={!canCreatePublishedForm}
-                title={
-                  canCreatePublishedForm
-                    ? undefined
-                    : "Add Signature or Initial fields on this template first"
-                }
+                onClick={() => openModal("webform")}
+                title="Create a Web Form from this template (heading and description are prefilled)"
               >
                 Create Web Form
               </MenuButton>

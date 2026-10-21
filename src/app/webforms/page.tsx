@@ -1,5 +1,7 @@
 import Link from "next/link";
 import AdminShell from "@/components/AdminShell";
+import DeletePublishedFormButton from "@/components/templates/DeletePublishedFormButton";
+import DuplicatePublishedFormButton from "@/components/templates/DuplicatePublishedFormButton";
 import { getSessionOffice, requireAdmin } from "@/lib/auth";
 import { readOffices, readTemplates, readWebForms } from "@/lib/store";
 
@@ -108,6 +110,7 @@ export default async function WebFormsPage({
                 <th className="px-3 py-3">Status</th>
                 <th className="px-3 py-3">Uses</th>
                 <th className="px-3 py-3">Public URL</th>
+                <th className="px-3 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -122,6 +125,16 @@ export default async function WebFormsPage({
                     <a className="text-[#4c00ff] hover:underline" href={`/webforms/${form.slug}`}>
                       /webforms/{form.slug}
                     </a>
+                  </td>
+                  <td className="px-3 py-4 text-[13px]">
+                    {session.role !== "viewer" ? (
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <DuplicatePublishedFormButton kind="webform" id={form.id} />
+                        <DeletePublishedFormButton kind="webform" id={form.id} name={form.name} />
+                      </div>
+                    ) : (
+                      "—"
+                    )}
                   </td>
                 </tr>
               ))}

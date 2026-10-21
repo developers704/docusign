@@ -162,6 +162,33 @@ export default function RecipientList({
           )}
         </div>
       )}
+      {!bulkMode && signingOrderEnabled ? (
+        <div
+          className={`rounded-[2px] border px-3 py-2.5 text-[13px] leading-5 ${
+            recipients.length < 2
+              ? "border-[#f5c2c7] bg-[#fff5f5] text-[#b00020]"
+              : "border-[#c4b5fd] bg-[#f5f0ff] text-[#3b1d7a]"
+          }`}
+          role="status"
+        >
+          {recipients.length < 2 ? (
+            <>
+              <p className="font-semibold">Signing order needs more than one recipient.</p>
+              <p className="mt-1">
+                Order means people sign one after another. Add another recipient, or turn off “Set signing order” if
+                only one person is signing.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="font-semibold">Signing order is on.</p>
+              <p className="mt-1">
+                Recipients sign in numbered sequence (1 first, then 2, and so on). Reorder them if needed.
+              </p>
+            </>
+          )}
+        </div>
+      ) : null}
       {bulkMode && (
         <div className="flex flex-wrap items-center gap-3">
           <p className="text-[13px] text-[#666]">
@@ -174,6 +201,12 @@ export default function RecipientList({
       )}
 
       {showTemplateRoles && !bulkMode && <TemplateRoleBanner roles={templateRoles} recipients={recipients} />}
+
+      {!bulkMode ? (
+        <p className="text-[13px] text-[#666]">
+          Enter each recipient’s name and email here before Next. Invitations are sent to these addresses when you send.
+        </p>
+      ) : null}
 
       {allowMultiple && (bulkMode || sendMode === "group" || sendMode === "sequential") && (
         <div id="recipient-csv-import">

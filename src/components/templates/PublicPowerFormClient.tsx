@@ -152,7 +152,9 @@ export default function PublicPowerFormClient({
         <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-[0_8px_32px_rgba(40,18,72,.12)]">
           <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-[#f0ebff] border-t-[#4c00ff]" />
           <h1 className="mt-5 text-xl font-bold text-[#21004c]">Opening your document…</h1>
-          <p className="mt-2 text-sm text-[#6b6578]">{form.successMessage}</p>
+          {form.successMessage ? (
+            <p className="mt-2 text-sm text-[#6b6578]">{form.successMessage}</p>
+          ) : null}
         </div>
       </div>
     );

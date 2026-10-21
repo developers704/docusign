@@ -70,12 +70,14 @@ async function createTemplateAction(formData: FormData) {
       row.updatedAt = new Date().toISOString();
       await writeTemplates(all);
     }
-    revalidatePath("/templates");
-    redirect(`/templates?folder=${encodeURIComponent(assignFolderId)}`);
   }
 
   revalidatePath("/templates");
   revalidatePath(`/templates/${created.id}/edit`);
+  const intent = String(formData.get("intent") || "next");
+  if (intent === "close") {
+    redirect(assignFolderId ? `/templates?folder=${encodeURIComponent(assignFolderId)}` : "/templates");
+  }
   redirect(`/templates/${created.id}/edit`);
 }
 
@@ -263,13 +265,15 @@ async function createPowerFormAction(formData: FormData) {
   if (session.role === "viewer") return;
   const templateId = String(formData.get("templateId") || "");
   const name = String(formData.get("name") || "").trim();
+  const description = String(formData.get("description") || "");
   const template = await service.getById(templateId);
   if (!template || !canAccessOffice(session, template.officeId)) return;
   let form;
   try {
     form = await createPowerFormFromTemplate({
       template,
-      name: name || template.name,
+      name: name || template.title || template.name,
+      description,
       actor: { userId: session.userId, email: session.email },
     });
   } catch (error) {

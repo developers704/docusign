@@ -7,8 +7,8 @@ const SUPPORTED_ACCESS = new Set(["public", "access_code", "email_verified"]);
 const SUPPORTED_RECIPIENT_MODES = new Set(["self_signer", "self_signer_plus_internal", "fixed_recipients"]);
 
 export function assertTemplateEligibleForPowerForm(template: TemplateRecord) {
-  if (template.status !== "published") {
-    throw new Error("Only published templates can be used for PowerForms.");
+  if (template.status === "archived") {
+    throw new Error("Archived templates cannot be used for PowerForms.");
   }
   if (!templateHasSigningFields(template)) {
     throw new Error("Add Signature or Initial fields on this template first, then create the PowerForm.");
