@@ -3,7 +3,7 @@ import { PDFDocument } from "pdf-lib";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { canAccessOffice, requireAdminApi } from "@/lib/auth";
-import { getEnvelopeById } from "@/lib/store";
+import { getEnvelopeById, readEnvelopes } from "@/lib/store";
 
 /** Lightweight bootstrap for /prepare/[id] — avoids RSC streaming of the heavy prepare editor. */
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -31,8 +31,17 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     console.error("[prepare-bootstrap] PDF page sizes failed:", id, error);
   }
 
+  let bulkBatchCount = 0;
+  if (envelope.bulkBatchId) {
+    const envelopes = await readEnvelopes();
+    bulkBatchCount = envelopes.filter(
+      (item) => item.bulkBatchId === envelope.bulkBatchId && item.status === "draft"
+    ).length;
+  }
+
   return NextResponse.json({
     envelope: JSON.parse(JSON.stringify(envelope)),
     pageSizes,
+    bulkBatchCount,
   });
 }

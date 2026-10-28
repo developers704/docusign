@@ -9,6 +9,7 @@ import DocumentPreviewModal from "@/components/templates/DocumentPreviewModal";
 import TemplateDocumentCard from "@/components/templates/TemplateDocumentCard";
 import { UPLOAD_ACCEPT, UPLOAD_HELP_TEXT } from "@/lib/documentImport";
 import { REMINDER_FREQUENCY_OPTIONS } from "@/lib/categoryConstants";
+import CategoryPicker from "@/components/CategoryPicker";
 import ScheduleDateTimeFields, { useDetectedTimeZone } from "@/components/ScheduleDateTimeFields";
 import { toDateTimeLocalValue, wallTimeInZoneToUtcIso } from "@/lib/timezone";
 import {
@@ -112,8 +113,6 @@ export default function NewEnvelopeForm({
   const [templateId, setTemplateId] = useState(editEnvelope?.templateId || initialTemplate?.id || "");
   const [categories, setCategories] = useState<string[]>(initialCategories);
   const [category, setCategory] = useState(editEnvelope?.category || "");
-  const [addingCategory, setAddingCategory] = useState(false);
-  const [newCategory, setNewCategory] = useState("");
   const [reminderFrequency, setReminderFrequency] = useState(editEnvelope?.reminderFrequency || "every_day");
   const [deliveryMode, setDeliveryMode] = useState<"later" | "schedule">("later");
   const [timeZone, setTimeZone] = useDetectedTimeZone();
@@ -225,8 +224,8 @@ export default function NewEnvelopeForm({
     return null;
   }
 
-  async function saveNewCategory() {
-    const name = newCategory.trim();
+  async function saveNewCategory(rawName: string) {
+    const name = rawName.trim();
     if (!name) return;
     const response = await fetch("/api/categories", {
       method: "POST",
@@ -236,12 +235,10 @@ export default function NewEnvelopeForm({
     const result = (await response.json()) as { items?: string[]; error?: string };
     if (!response.ok) {
       setMessage(result.error || "Could not add category.");
-      return;
+      throw new Error(result.error || "Could not add category.");
     }
     setCategories(result.items || []);
     setCategory(name);
-    setNewCategory("");
-    setAddingCategory(false);
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -381,7 +378,7 @@ export default function NewEnvelopeForm({
       if (result.bulk && result.bulkCount) {
         sessionStorage.setItem(
           "esign_notice",
-          `Created ${result.bulkCount} separate contracts (one per recipient). Place signature fields once — they apply to all drafts in this bulk send. Then send each from Contracts.`
+          `Created ${result.bulkCount} contracts from your CSV. Place Signature/Name/Email once — the same layout applies to everyone (each person keeps their own name & email). Then Save or Send.`
         );
       }
       if (deliveryMode === "schedule" && scheduleAt && timeZone) {
@@ -701,65 +698,13 @@ export default function NewEnvelopeForm({
           <label className="mb-1 flex items-center gap-1 text-[13px] font-semibold text-[#212121]">
             Category <Icon name="help" className="h-3.5 w-3.5 text-[#888]" />
           </label>
-          <select
-            value={addingCategory ? "__add_category__" : category}
-            onChange={(event) => {
-              const value = event.target.value;
-              if (value === "__add_category__") {
-                setAddingCategory(true);
-                return;
-              }
-              setAddingCategory(false);
-              setCategory(value);
-            }}
-            className="h-10 w-full rounded-[2px] border border-[#c6c6c6] bg-white px-3 text-sm"
-          >
-            <option value="">-- Select --</option>
-            {categories.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-            <option value="__add_category__">+ Add category…</option>
-          </select>
-          {addingCategory && (
-            <div className="mt-2 flex gap-2">
-              <input
-                value={newCategory}
-                onChange={(event) => setNewCategory(event.target.value)}
-                placeholder="New category name"
-                className="h-9 flex-1 rounded-[2px] border border-[#c6c6c6] px-3 text-sm"
-                autoFocus
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    event.preventDefault();
-                    void saveNewCategory();
-                  }
-                  if (event.key === "Escape") {
-                    setAddingCategory(false);
-                    setNewCategory("");
-                  }
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => void saveNewCategory()}
-                className="rounded-[2px] bg-[#4c00ff] px-3 text-[12px] font-semibold text-white"
-              >
-                Save
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setAddingCategory(false);
-                  setNewCategory("");
-                }}
-                className="rounded-[2px] border border-[#c6c6c6] px-3 text-[12px] font-semibold text-[#666]"
-              >
-                Cancel
-              </button>
-            </div>
-          )}
+          <CategoryPicker
+            categories={categories}
+            value={category}
+            onChange={setCategory}
+            onAddCategory={saveNewCategory}
+            disabled={loading}
+          />
         </div>
         <div>
           <label className="mb-1 flex items-center gap-1 text-[13px] font-semibold text-[#212121]">

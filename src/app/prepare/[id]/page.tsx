@@ -8,6 +8,7 @@ export default function PrepareEnvelopePage({ params }: { params: Promise<{ id: 
   const { id } = use(params);
   const [envelope, setEnvelope] = useState<EnvelopeRecord | null>(null);
   const [pageSizes, setPageSizes] = useState<Array<{ width: number; height: number }>>([]);
+  const [bulkBatchCount, setBulkBatchCount] = useState(0);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -21,6 +22,7 @@ export default function PrepareEnvelopePage({ params }: { params: Promise<{ id: 
           error?: string;
           envelope?: EnvelopeRecord;
           pageSizes?: Array<{ width: number; height: number }>;
+          bulkBatchCount?: number;
         };
         if (!response.ok || !result.envelope) {
           if (!cancelled) setError(result.error || "Could not load envelope.");
@@ -29,6 +31,7 @@ export default function PrepareEnvelopePage({ params }: { params: Promise<{ id: 
         if (!cancelled) {
           setEnvelope(result.envelope);
           setPageSizes(result.pageSizes || [{ width: 612, height: 792 }]);
+          setBulkBatchCount(Number(result.bulkBatchCount) || 0);
         }
       } catch {
         if (!cancelled) setError("Connection error while loading prepare.");
@@ -55,5 +58,5 @@ export default function PrepareEnvelopePage({ params }: { params: Promise<{ id: 
     );
   }
 
-  return <PrepareEditor envelope={envelope} pageSizes={pageSizes} />;
+  return <PrepareEditor envelope={envelope} pageSizes={pageSizes} bulkBatchCount={bulkBatchCount} />;
 }

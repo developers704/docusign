@@ -98,12 +98,17 @@ function findClearPosition(
 export default function PrepareEditor({
   envelope,
   pageSizes,
+  bulkBatchCount = 0,
 }: {
   envelope: EnvelopeRecord;
   pageSizes: Array<{ width: number; height: number }>;
+  /** When bulk CSV send: how many draft contracts share this field layout. */
+  bulkBatchCount?: number;
 }) {
   const router = useRouter();
   const canvasRef = useRef<HTMLDivElement>(null);
+  const isBulkBatch = Boolean(envelope.bulkBatchId);
+  const bulkTotal = Math.max(bulkBatchCount, isBulkBatch ? 1 : 0);
   const [page, setPage] = useState(1);
   const [recipients, setRecipients] = useState<RecipientRecord[]>(() =>
     [...envelope.recipients].sort((a, b) => a.order - b.order)
@@ -650,12 +655,10 @@ export default function PrepareEditor({
         setMessage(result.error || "Could not save fields.");
         return;
       }
-      if (result.syncedBulkCount && result.syncedBulkCount > 0) {
-        sessionStorage.setItem(
-          "esign_notice",
-          `Signature fields applied to ${result.syncedBulkCount + 1} bulk contracts. Send the others from Contracts when ready.`
-        );
-      }
+      const bulkSynced =
+        typeof result.syncedBulkCount === "number" && result.syncedBulkCount > 0
+          ? result.syncedBulkCount + 1
+          : 0;
       if (send) {
         setMessage(schedule ? "Scheduling..." : "Sending...");
         const sendResponse = await fetch(`/api/admin/envelopes/${envelope.id}/send`, {
@@ -681,7 +684,9 @@ export default function PrepareEditor({
       setMessage("");
       sessionStorage.setItem(
         "esign_notice",
-        `Draft saved: “${envelope.title}” is in your Drafts. You can continue preparing it anytime.`
+        bulkSynced > 0
+          ? `Same fields saved on all ${bulkSynced} bulk contracts (each person keeps their own name & email). Ready in Drafts.`
+          : `Draft saved: “${envelope.title}” is in your Drafts. You can continue preparing it anytime.`
       );
       router.push("/agreements?view=draft");
       router.refresh();
@@ -747,11 +752,24 @@ export default function PrepareEditor({
         </p>
 
         <div className="mt-4">
-          <p className="text-xs font-semibold text-[#2a2040]">Assign new fields to</p>
-          {renderSignerRows()}
-          {renderSigningOrderSummary(true)}
+          {isBulkBatch ? (
+            <div className="rounded-xl border border-[#d9ccff] bg-[#faf8ff] px-3 py-2.5 text-[11px] leading-5 text-[#333]">
+              <p className="font-semibold text-[#4c00ff]">Bulk send — place fields once</p>
+              <p className="mt-1">
+                Same Signature / Name / Email boxes apply to all{" "}
+                <strong>{bulkTotal || "CSV"}</strong> people. Each contract fills Name & Email from that
+                row automatically — no need to re-assign per person.
+              </p>
+            </div>
+          ) : (
+            <>
+              <p className="text-xs font-semibold text-[#2a2040]">Assign new fields to</p>
+              {renderSignerRows()}
+              {renderSigningOrderSummary(true)}
+            </>
+          )}
         </div>
-        {recipientId && (
+        {recipientId && !isBulkBatch && (
           <p
             className="mt-2 rounded-xl px-3 py-2 text-[11px] font-semibold"
             style={{
@@ -760,6 +778,12 @@ export default function PrepareEditor({
             }}
           >
             Placing for: {recipientMap.get(recipientId)?.name}
+          </p>
+        )}
+        {isBulkBatch && recipientId && (
+          <p className="mt-2 text-[11px] text-[#6f657c]">
+            Template signer: <strong className="text-[#2a2040]">{recipientMap.get(recipientId)?.name}</strong>{" "}
+            (layout copies to every CSV recipient)
           </p>
         )}
 
@@ -895,6 +919,9 @@ export default function PrepareEditor({
               <p className="text-sm font-semibold text-[#21004c]">How do you want to send?</p>
               <p className="text-xs text-[#64748b]">
                 Schedule uses your time zone. When the time arrives, signing emails go out automatically.
+                {isBulkBatch
+                  ? ` Bulk: sending also emails the other ${Math.max(0, bulkTotal - 1)} contracts that share these fields.`
+                  : ""}
               </p>
               <div className="grid gap-2 sm:grid-cols-2">
                 <label
@@ -969,8 +996,16 @@ export default function PrepareEditor({
 
         {/* Mobile field palette */}
         <div className="border-b border-[#ebe6f0] bg-white px-3 py-2 lg:hidden">
-          <p className="mb-2 text-[11px] font-semibold text-[#2a2040]">Assign new fields to</p>
-          {renderSignerRows(true)}
+          {isBulkBatch ? (
+            <p className="mb-2 rounded-lg border border-[#d9ccff] bg-[#faf8ff] px-2.5 py-2 text-[11px] font-semibold text-[#4c00ff]">
+              Bulk: place once — same fields for all {bulkTotal || "CSV"} people (name/email from each row).
+            </p>
+          ) : (
+            <>
+              <p className="mb-2 text-[11px] font-semibold text-[#2a2040]">Assign new fields to</p>
+              {renderSignerRows(true)}
+            </>
+          )}
           <div className="flex gap-1.5 overflow-x-auto pb-1">
             {standardPalette.map((item) => (
               <button
@@ -1088,20 +1123,41 @@ export default function PrepareEditor({
         ) : (
           <div className="mt-4 space-y-4">
             <h2 className="text-xl font-black">{selected.label}</h2>
-            <label className="block text-xs font-extrabold">
-              Assigned signer
-              <select
-                value={selected.recipientId}
-                onChange={(e) => patch(selected.id, { recipientId: e.target.value })}
-                className="mt-2 w-full rounded-xl border px-3 py-3 text-xs font-bold"
-              >
-                {recipients.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {signerLabel(r)}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {isBulkBatch || actionable.length <= 1 ? (
+              <div className="rounded-xl border border-[#e5dfe8] bg-[#fcfbfd] px-3 py-3 text-xs">
+                <p className="font-extrabold text-[#64748b]">Assigned signer</p>
+                <p className="mt-1 font-bold text-[#21004c]">
+                  {signerLabel(recipients.find((r) => r.id === selected.recipientId) || recipients[0])}
+                </p>
+                {isBulkBatch ? (
+                  <p className="mt-1 text-[10px] font-semibold text-[#6f657c]">
+                    On send/save, this field is copied to every bulk recipient using their own name & email.
+                  </p>
+                ) : null}
+              </div>
+            ) : (
+              <label className="block text-xs font-extrabold">
+                Assigned signer
+                <select
+                  value={selected.recipientId}
+                  onChange={(e) => patch(selected.id, { recipientId: e.target.value })}
+                  className="mt-2 w-full rounded-xl border px-3 py-3 text-xs font-bold"
+                >
+                  {recipients.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {signerLabel(r)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            {isBulkBatch && (selected.type === "name" || selected.type === "email") ? (
+              <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] font-semibold text-emerald-900">
+                {selected.type === "name"
+                  ? "Each person sees their CSV name here — you do not type it per user."
+                  : "Each person sees their CSV email here — you do not type it per user."}
+              </p>
+            ) : null}
             {selected.tooltip === "__prefill__" ||
             ["text", "name", "signer_company", "number", "checkbox"].includes(selected.type) ? (
               <label className="block text-xs font-extrabold">

@@ -151,23 +151,36 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   envelope.preparedAt = new Date().toISOString();
   envelope.updatedAt = envelope.preparedAt;
 
-  // Bulk send: copy the same field layout onto sibling drafts (each has one signer).
+  // Bulk send: same field layout for every CSV recipient (each draft has one signer).
+  // Name/Email auto-fill from that recipient's name/email at sign time — do not copy typed values.
   let syncedBulkCount = 0;
   if (envelope.bulkBatchId) {
+    const autoFillTypes = new Set(["name", "email", "signer_name", "signer_email", "date", "signature_date", "auto_date"]);
     const siblings = envelopes.filter(
       (item) =>
         item.id !== envelope.id &&
         item.bulkBatchId === envelope.bulkBatchId &&
         item.status === "draft" &&
-        item.recipients.length === 1
+        item.recipients.some((recipient) => !["receives_copy", "view_only"].includes(recipient.recipientType || "signer"))
     );
     for (const sibling of siblings) {
-      const soleId = sibling.recipients[0].id;
-      sibling.fields = fields.map((field) => ({
-        ...field,
-        id: crypto.randomUUID(),
-        recipientId: soleId,
-      }));
+      const sole =
+        sibling.recipients.find((recipient) => !["receives_copy", "view_only"].includes(recipient.recipientType || "signer")) ||
+        sibling.recipients[0];
+      if (!sole) continue;
+      const soleId = sole.id;
+      sibling.fields = fields.map((field) => {
+        const next = {
+          ...field,
+          id: crypto.randomUUID(),
+          recipientId: soleId,
+        };
+        // Keep sender pre-fill values; clear signer auto fields so each person gets their own.
+        if (field.tooltip !== "__prefill__" && autoFillTypes.has(field.type)) {
+          delete next.value;
+        }
+        return next;
+      });
       sibling.pageAssignments = (envelope.pageAssignments || []).map((assignment) => ({
         ...assignment,
         id: crypto.randomUUID(),
