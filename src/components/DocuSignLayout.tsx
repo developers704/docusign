@@ -8,6 +8,7 @@ import { resolveAdminSection, sectionSideNav, topNavItems, withOfficeWorkspaces,
 import type { OfficeRecord, TemplateFolderRecord } from "@/lib/types";
 import { DocuSignSideNav } from "./DocuSignNav";
 import { Icon } from "./Icons";
+import HistoryBackButton from "./HistoryBackButton";
 import MobileNavDrawer from "./MobileNavDrawer";
 import NotificationBell from "./NotificationBell";
 import LogoutButton from "./LogoutButton";
@@ -78,7 +79,7 @@ function DocuSignLayoutInner({
   return (
     <div className="flex min-h-screen flex-col bg-[#f6f3f9] text-[#1c1230]">
       <header className="sticky top-0 z-40 border-b border-[#e7e2ec] bg-white/90 pt-[env(safe-area-inset-top)] backdrop-blur-md">
-        {/* Mobile header — DocuSign: hamburger left, logo center */}
+        {/* Mobile header — hamburger left, logo center */}
         <div className="relative flex h-14 items-center px-2 lg:hidden">
           <button
             type="button"
@@ -92,11 +93,13 @@ function DocuSignLayoutInner({
 
           <Link
             href="/"
-            className="mx-auto flex items-center gap-2"
+            className="mx-auto flex max-w-[70%] items-center justify-center gap-2"
             aria-label="Valliani Contracts home"
           >
-            <span className="flex h-7 w-7 items-center justify-center rounded-xl brand-gradient text-[9px] font-black text-white shadow-md shadow-violet-200/50">VC</span>
-            <span className="text-[17px] font-extrabold tracking-[-.035em] text-[#1c1230]">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl brand-gradient text-[9px] font-black text-white shadow-md shadow-violet-200/50">
+              VC
+            </span>
+            <span className="truncate text-[16px] font-extrabold tracking-[-.035em] text-[#1c1230]">
               Valliani Contracts
             </span>
           </Link>
@@ -176,7 +179,20 @@ function DocuSignLayoutInner({
           <MobileNavDrawer section={section} userName={session.name} onClose={() => setMobileNavOpen(false)} />
         )}
 
-        <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-white pb-[env(safe-area-inset-bottom)]">{children}</main>
+        <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-white pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-[env(safe-area-inset-bottom)]">
+          {children}
+        </main>
+
+        {/* Mobile sticky back bar — always reachable on nested pages */}
+        {!isHome ? (
+          <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#e7e2ec] bg-white/95 px-3 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] backdrop-blur lg:hidden">
+            <HistoryBackButton
+              fallbackHref="/"
+              label="← Back"
+              className="inline-flex h-11 w-full items-center justify-center rounded-[2px] border border-[#c6c6c6] bg-white text-[15px] font-semibold text-[#21004c] hover:bg-[#f7f4fb]"
+            />
+          </div>
+        ) : null}
       </div>
     </div>
   );

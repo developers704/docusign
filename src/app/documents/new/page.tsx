@@ -57,11 +57,15 @@ export default async function NewDocumentPage({
         <div className="mb-4 flex items-center justify-between gap-3 border-b border-[#e8e8e8] pb-3">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-wide text-[#4c00ff]">
-              {editEnvelope ? "Step 1 of 3 · Recipients" : bulk === "1" ? "Bulk send" : "Step 1 of 3 · Upload & recipients"}
+              {editEnvelope
+                ? "Step 1 of 3 · Document & recipients"
+                : bulk === "1"
+                  ? "Bulk send"
+                  : "Step 1 of 3 · Upload & recipients"}
             </p>
             <h1 className="text-[20px] font-semibold text-[#212121]">
               {editEnvelope
-                ? "Edit recipients, emails & message"
+                ? "Edit document, recipients & message"
                 : bulk === "1"
                   ? "Bulk send"
                   : "Upload a Document and Add Contract Recipients"}

@@ -51,9 +51,15 @@ export default function NewEnvelopeForm({
   const router = useRouter();
   const editMode = Boolean(editEnvelope);
   const fileRef = useRef<HTMLInputElement>(null);
+  const replaceFileRef = useRef<HTMLInputElement>(null);
   const [openSection, setOpenSection] = useState<Section>(
-    editMode ? "recipients" : bulkMode ? "recipients" : "documents"
+    editMode ? "documents" : bulkMode ? "recipients" : "documents"
   );
+  const [editFileName, setEditFileName] = useState(editEnvelope?.originalFileName || "document.pdf");
+  const [editDocumentSrc, setEditDocumentSrc] = useState(
+    editEnvelope ? `/api/admin/envelopes/${editEnvelope.id}/document` : null
+  );
+  const [replacingDoc, setReplacingDoc] = useState(false);
   const [uploadMenuOpen, setUploadMenuOpen] = useState(false);
   const [recipients, setRecipients] = useState<RecipientFormInput[]>(() => {
     if (editEnvelope) return envelopeRecipientsToForm(editEnvelope.recipients);
@@ -241,6 +247,40 @@ export default function NewEnvelopeForm({
     setCategory(name);
   }
 
+  async function replaceDraftDocument(file: File) {
+    if (!editEnvelope) return;
+    setReplacingDoc(true);
+    setMessage("");
+    try {
+      const formData = new FormData();
+      formData.set("pdfFile", file);
+      const response = await fetch(`/api/admin/envelopes/${editEnvelope.id}/replace-document`, {
+        method: "POST",
+        body: formData,
+      });
+      const result = (await response.json()) as {
+        error?: string;
+        originalFileName?: string;
+        documentSrc?: string;
+      };
+      if (!response.ok) {
+        setMessage(result.error || "Could not replace document.");
+        return;
+      }
+      setEditFileName(result.originalFileName || file.name);
+      setEditDocumentSrc(
+        result.documentSrc || `/api/admin/envelopes/${editEnvelope.id}/document?t=${Date.now()}`
+      );
+      setNotice("Document replaced. Signature fields were cleared — place them again on Next.");
+      setOpenSection("documents");
+    } catch {
+      setMessage("Connection error while replacing document.");
+    } finally {
+      setReplacingDoc(false);
+      if (replaceFileRef.current) replaceFileRef.current.value = "";
+    }
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!editMode) {
@@ -301,8 +341,13 @@ export default function NewEnvelopeForm({
     const workflowType = bulkMode ? "parallel" : inferWorkflowType(signingOrderEnabled, preparedRecipients);
 
     if (editMode && editEnvelope) {
+      if (!title.trim()) {
+        setMessage("Enter a document title.");
+        setOpenSection("documents");
+        return;
+      }
       setLoading(true);
-      setMessage("Saving recipients...");
+      setMessage("Saving...");
       try {
         const response = await fetch(`/api/admin/envelopes/${editEnvelope.id}/draft`, {
           method: "PATCH",
@@ -449,10 +494,9 @@ export default function NewEnvelopeForm({
       )}
       {!allowOfficeSelection && <input type="hidden" name="officeId" value={officeId} />}
 
-      {/* Add documents */}
-      {!editMode && (
+      {/* Add / edit documents */}
       <section>
-        <SectionHeader id="documents" title="Add documents" />
+        <SectionHeader id="documents" title={editMode ? "Document" : "Add documents"} />
         {openSection === "documents" && (
           <div className="space-y-4 py-4">
             <div>
@@ -474,136 +518,171 @@ export default function NewEnvelopeForm({
               />
             </div>
 
-            <div className="relative flex min-h-[140px] flex-col items-center justify-center rounded-[2px] border border-[#d8d8d8] bg-[#f7f7f7] px-6 py-8 text-center">
-              <Icon name="upload" className="h-7 w-7 text-[#4c00ff]" />
-              <div className="mt-3 text-[14px] text-[#333]">
-                Drop your files here or{" "}
-                <span className="relative inline-block align-middle" data-upload-menu>
-                  <button
-                    type="button"
-                    onClick={() => setUploadMenuOpen((value) => !value)}
-                    className="inline-flex items-center gap-1 rounded-[2px] bg-[#4c00ff] px-3 py-1.5 text-[13px] font-semibold text-white"
-                  >
-                    Upload
-                    <Icon name="chevron" className="h-3 w-3 rotate-90" />
-                  </button>
-                  {uploadMenuOpen && (
-                    <div className="absolute left-0 top-full z-30 mt-1 w-56 overflow-hidden rounded-[2px] border border-[#d8d8d8] bg-white text-left shadow-lg">
-                      <button
-                        type="button"
-                        className="flex w-full items-center gap-2 px-3 py-2.5 text-[13px] hover:bg-[#f2f2f2]"
-                        onClick={() => {
-                          setDocumentMode("upload");
-                          setUploadMenuOpen(false);
-                          fileRef.current?.click();
-                        }}
-                      >
-                        <Icon name="file" className="h-4 w-4 text-[#4c00ff]" /> Browse
-                      </button>
-                      <button
-                        type="button"
-                        className="flex w-full items-center gap-2 px-3 py-2.5 text-[13px] hover:bg-[#f2f2f2]"
-                        onClick={() => {
-                          setDocumentMode("template");
-                          setUploadMenuOpen(false);
-                        }}
-                      >
-                        <Icon name="template" className="h-4 w-4 text-[#4c00ff]" /> Use a template
-                      </button>
-                      <button
-                        type="button"
-                        className="flex w-full items-center gap-2 border-t border-[#eee] px-3 py-2.5 text-[13px] hover:bg-[#f2f2f2]"
-                        onClick={() => {
-                          setDocumentMode("write");
-                          setUploadMenuOpen(false);
-                        }}
-                      >
-                        <Icon name="agreement" className="h-4 w-4 text-[#4c00ff]" /> Write text
-                      </button>
-                    </div>
-                  )}
-                </span>
-              </div>
-              <input
-                ref={fileRef}
-                type="file"
-                accept={UPLOAD_ACCEPT}
-                className="hidden"
-                onChange={(event) => {
-                  setUploadedFile(event.target.files?.[0] || null);
-                  setDocumentMode("upload");
-                }}
-              />
-              {uploadedFile && (
-                <p className="mt-3 text-[12px] font-semibold text-emerald-700">
-                  Selected: {uploadedFile.name}
+            {editMode && editEnvelope && editDocumentSrc ? (
+              <div className="space-y-3">
+                <p className="text-[13px] text-[#666]">
+                  Use the ⋮ menu on the document for Preview or Change file. Title, recipients, and message are editable below.
                 </p>
-              )}
-              <p className="mt-2 text-[11px] text-[#888]">{UPLOAD_HELP_TEXT}</p>
-            </div>
-
-            {documentMode === "template" && (
-              <div className="space-y-2">
-                <label className="block text-[13px] text-[#666]">Template</label>
-                <select
-                  value={templateId}
-                  onChange={(event) => applyTemplate(event.target.value)}
-                  className="h-10 w-full rounded-[2px] border border-[#c6c6c6] px-3 text-sm"
-                >
-                  <option value="">Select a template</option>
-                  {visibleTemplates.map((template) => (
-                    <option key={template.id} value={template.id}>
-                      {template.name}
-                    </option>
-                  ))}
-                </select>
-                {hasTemplateDocuments && selectedTemplate ? (
-                  <div className="flex flex-wrap gap-3 pt-2">
-                    {templateDocuments
-                      .filter((doc) => Boolean(doc.filePath))
-                      .map((doc) => {
-                        const src = `/api/admin/templates/${selectedTemplate.id}/documents/${doc.id}`;
-                        return (
-                          <TemplateDocumentCard
-                            key={doc.id}
-                            fileName={doc.originalFileName}
-                            pageCount={doc.pageCount}
-                            previewSrc={src}
-                            onPreview={() =>
-                              setTemplateDocPreview({
-                                fileName: doc.originalFileName,
-                                src,
-                              })
-                            }
-                          />
-                        );
-                      })}
-                  </div>
-                ) : null}
+                <div className="flex flex-wrap items-start gap-3">
+                  <TemplateDocumentCard
+                    fileName={editFileName}
+                    previewSrc={editDocumentSrc}
+                    onPreview={() =>
+                      setTemplateDocPreview({
+                        fileName: editFileName,
+                        src: editDocumentSrc,
+                      })
+                    }
+                    onChangeFile={() => {
+                      if (replacingDoc) return;
+                      replaceFileRef.current?.click();
+                    }}
+                    changeFileLabel={replacingDoc ? "Replacing…" : "Change file"}
+                  />
+                </div>
+                {replacingDoc ? (
+                  <p className="text-[12px] font-semibold text-[#4c00ff]">Uploading new document…</p>
+                ) : (
+                  <p className="text-[11px] text-[#888]">
+                    PDF, Word, TXT, PNG, or JPG. Changing the file clears old signature fields.
+                  </p>
+                )}
+                <input
+                  ref={replaceFileRef}
+                  type="file"
+                  accept={UPLOAD_ACCEPT}
+                  className="hidden"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) void replaceDraftDocument(file);
+                  }}
+                />
               </div>
-            )}
+            ) : (
+              <>
+                <div className="relative flex min-h-[140px] flex-col items-center justify-center rounded-[2px] border border-[#d8d8d8] bg-[#f7f7f7] px-6 py-8 text-center">
+                  <Icon name="upload" className="h-7 w-7 text-[#4c00ff]" />
+                  <div className="mt-3 text-[14px] text-[#333]">
+                    Drop your files here or{" "}
+                    <span className="relative inline-block align-middle" data-upload-menu>
+                      <button
+                        type="button"
+                        onClick={() => setUploadMenuOpen((value) => !value)}
+                        className="inline-flex items-center gap-1 rounded-[2px] bg-[#4c00ff] px-3 py-1.5 text-[13px] font-semibold text-white"
+                      >
+                        Upload
+                        <Icon name="chevron" className="h-3 w-3 rotate-90" />
+                      </button>
+                      {uploadMenuOpen && (
+                        <div className="absolute left-0 top-full z-30 mt-1 w-56 overflow-hidden rounded-[2px] border border-[#d8d8d8] bg-white text-left shadow-lg">
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 px-3 py-2.5 text-[13px] hover:bg-[#f2f2f2]"
+                            onClick={() => {
+                              setDocumentMode("upload");
+                              setUploadMenuOpen(false);
+                              fileRef.current?.click();
+                            }}
+                          >
+                            <Icon name="file" className="h-4 w-4 text-[#4c00ff]" /> Browse
+                          </button>
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 px-3 py-2.5 text-[13px] hover:bg-[#f2f2f2]"
+                            onClick={() => {
+                              setDocumentMode("template");
+                              setUploadMenuOpen(false);
+                            }}
+                          >
+                            <Icon name="template" className="h-4 w-4 text-[#4c00ff]" /> Use a template
+                          </button>
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 border-t border-[#eee] px-3 py-2.5 text-[13px] hover:bg-[#f2f2f2]"
+                            onClick={() => {
+                              setDocumentMode("write");
+                              setUploadMenuOpen(false);
+                            }}
+                          >
+                            <Icon name="agreement" className="h-4 w-4 text-[#4c00ff]" /> Write text
+                          </button>
+                        </div>
+                      )}
+                    </span>
+                  </div>
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept={UPLOAD_ACCEPT}
+                    className="hidden"
+                    onChange={(event) => {
+                      setUploadedFile(event.target.files?.[0] || null);
+                      setDocumentMode("upload");
+                    }}
+                  />
+                  {uploadedFile && (
+                    <p className="mt-3 text-[12px] font-semibold text-emerald-700">
+                      Selected: {uploadedFile.name}
+                    </p>
+                  )}
+                  <p className="mt-2 text-[11px] text-[#888]">{UPLOAD_HELP_TEXT}</p>
+                </div>
 
-            {documentMode === "write" && (
-              <textarea
-                value={documentText}
-                onChange={(event) => setDocumentText(event.target.value)}
-                rows={10}
-                placeholder="Write your contract content here..."
-                className="w-full rounded-[2px] border border-[#c6c6c6] px-3 py-3 text-sm leading-6"
-              />
-            )}
+                {documentMode === "template" && (
+                  <div className="space-y-2">
+                    <label className="block text-[13px] text-[#666]">Template</label>
+                    <select
+                      value={templateId}
+                      onChange={(event) => applyTemplate(event.target.value)}
+                      className="h-10 w-full rounded-[2px] border border-[#c6c6c6] px-3 text-sm"
+                    >
+                      <option value="">Select a template</option>
+                      {visibleTemplates.map((template) => (
+                        <option key={template.id} value={template.id}>
+                          {template.name}
+                        </option>
+                      ))}
+                    </select>
+                    {hasTemplateDocuments && selectedTemplate ? (
+                      <div className="flex flex-wrap gap-3 pt-2">
+                        {templateDocuments
+                          .filter((doc) => Boolean(doc.filePath))
+                          .map((doc) => {
+                            const src = `/api/admin/templates/${selectedTemplate.id}/documents/${doc.id}`;
+                            return (
+                              <TemplateDocumentCard
+                                key={doc.id}
+                                fileName={doc.originalFileName}
+                                pageCount={doc.pageCount}
+                                previewSrc={src}
+                                onPreview={() =>
+                                  setTemplateDocPreview({
+                                    fileName: doc.originalFileName,
+                                    src,
+                                  })
+                                }
+                              />
+                            );
+                          })}
+                      </div>
+                    ) : null}
+                  </div>
+                )}
 
+                {documentMode === "write" && (
+                  <textarea
+                    value={documentText}
+                    onChange={(event) => setDocumentText(event.target.value)}
+                    rows={10}
+                    placeholder="Write your contract content here..."
+                    className="w-full rounded-[2px] border border-[#c6c6c6] px-3 py-3 text-sm leading-6"
+                  />
+                )}
+              </>
+            )}
           </div>
         )}
       </section>
-      )}
-
-      {editMode && editEnvelope && (
-        <div className="rounded border border-[#e8e8e8] bg-[#fafafa] px-4 py-3 text-sm text-[#555]">
-          <p className="font-semibold text-[#212121]">{editEnvelope.title}</p>
-          <p className="mt-1 text-[12px]">{editEnvelope.originalFileName}</p>
-        </div>
-      )}
 
       {/* Add recipients */}
       <section>

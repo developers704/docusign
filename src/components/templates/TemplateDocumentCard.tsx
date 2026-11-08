@@ -16,13 +16,17 @@ export default function TemplateDocumentCard({
   pageCount,
   previewSrc,
   onPreview,
+  onChangeFile,
   onRemove,
+  changeFileLabel = "Change file",
 }: {
   fileName: string;
   pageCount?: number | null;
   previewSrc?: string | null;
   onPreview: () => void;
+  onChangeFile?: () => void;
   onRemove?: () => void;
+  changeFileLabel?: string;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -92,6 +96,18 @@ export default function TemplateDocumentCard({
             >
               Preview
             </button>
+            {onChangeFile ? (
+              <button
+                type="button"
+                className="block w-full px-3 py-2 text-left text-[13px] text-[#000] hover:bg-[#f0ebff]"
+                onClick={() => {
+                  setMenuOpen(false);
+                  onChangeFile();
+                }}
+              >
+                {changeFileLabel}
+              </button>
+            ) : null}
             {onRemove ? (
               <button
                 type="button"

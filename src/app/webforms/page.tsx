@@ -1,7 +1,6 @@
 import Link from "next/link";
 import AdminShell from "@/components/AdminShell";
-import DeletePublishedFormButton from "@/components/templates/DeletePublishedFormButton";
-import DuplicatePublishedFormButton from "@/components/templates/DuplicatePublishedFormButton";
+import PublishedFormRowActions from "@/components/powerforms/PublishedFormRowActions";
 import { getSessionOffice, requireAdmin } from "@/lib/auth";
 import { readOffices, readTemplates, readWebForms } from "@/lib/store";
 
@@ -36,7 +35,7 @@ export default async function WebFormsPage({
 
   return (
     <AdminShell session={session} office={office}>
-      <div className="bg-white px-8 py-7 text-[#000]">
+      <div className="bg-white px-4 py-6 text-[#000] sm:px-8 sm:py-7">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h1 className="text-[28px] font-semibold tracking-[-.01em]">Web Forms</h1>
@@ -101,45 +100,69 @@ export default async function WebFormsPage({
             </Link>
           </div>
         ) : (
-          <table className="mt-6 w-full border-t border-[#e5e5e5] text-left">
-            <thead>
-              <tr className="border-b border-[#e5e5e5] text-[12px] font-semibold text-[#666]">
-                <th className="px-3 py-3">Name</th>
-                <th className="px-3 py-3">Workspace</th>
-                <th className="px-3 py-3">Template</th>
-                <th className="px-3 py-3">Status</th>
-                <th className="px-3 py-3">Uses</th>
-                <th className="px-3 py-3">Public URL</th>
-                <th className="px-3 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            <div className="mt-6 -mx-4 space-y-3 px-4 lg:hidden">
               {visible.map((form) => (
-                <tr key={form.id} className="border-b border-[#ececec]">
-                  <td className="px-3 py-4 text-[14px] font-semibold">{form.name}</td>
-                  <td className="px-3 py-4 text-[14px]">{officeNames[form.officeId] || "—"}</td>
-                  <td className="px-3 py-4 text-[14px]">{templateNames[form.templateId] || form.templateId}</td>
-                  <td className="px-3 py-4 text-[14px] capitalize">{form.status}</td>
-                  <td className="px-3 py-4 text-[14px]">{form.usageCount}</td>
-                  <td className="px-3 py-4 text-[14px]">
-                    <a className="text-[#4c00ff] hover:underline" href={`/webforms/${form.slug}`}>
-                      /webforms/{form.slug}
-                    </a>
-                  </td>
-                  <td className="px-3 py-4 text-[13px]">
-                    {session.role !== "viewer" ? (
-                      <div className="flex flex-wrap items-center gap-2.5">
-                        <DuplicatePublishedFormButton kind="webform" id={form.id} />
-                        <DeletePublishedFormButton kind="webform" id={form.id} name={form.name} />
-                      </div>
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-                </tr>
+                <div key={form.id} className="rounded-[4px] border border-[#ececec] p-4">
+                  <p className="text-[15px] font-semibold">{form.name}</p>
+                  <p className="mt-1 text-[12px] text-[#666]">
+                    {officeNames[form.officeId] || "—"} · {form.status} · {form.usageCount} uses
+                  </p>
+                  <a className="mt-2 inline-block text-[13px] text-[#4c00ff]" href={`/webforms/${form.slug}`}>
+                    /webforms/{form.slug}
+                  </a>
+                  <div className="mt-3">
+                    <PublishedFormRowActions
+                      kind="webform"
+                      id={form.id}
+                      name={form.name}
+                      canManage={session.role !== "viewer"}
+                    />
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+
+            <div className="mt-6 hidden overflow-x-auto lg:block">
+              <table className="w-full min-w-[900px] border-t border-[#e5e5e5] text-left">
+                <thead>
+                  <tr className="border-b border-[#e5e5e5] text-[12px] font-semibold text-[#666]">
+                    <th className="px-3 py-3">Name</th>
+                    <th className="px-3 py-3">Workspace</th>
+                    <th className="px-3 py-3">Template</th>
+                    <th className="px-3 py-3">Status</th>
+                    <th className="px-3 py-3">Uses</th>
+                    <th className="px-3 py-3">Public URL</th>
+                    <th className="px-3 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visible.map((form) => (
+                    <tr key={form.id} className="border-b border-[#ececec]">
+                      <td className="px-3 py-4 text-[14px] font-semibold">{form.name}</td>
+                      <td className="px-3 py-4 text-[14px]">{officeNames[form.officeId] || "—"}</td>
+                      <td className="px-3 py-4 text-[14px]">{templateNames[form.templateId] || form.templateId}</td>
+                      <td className="px-3 py-4 text-[14px] capitalize">{form.status}</td>
+                      <td className="px-3 py-4 text-[14px]">{form.usageCount}</td>
+                      <td className="px-3 py-4 text-[14px]">
+                        <a className="text-[#4c00ff] hover:underline" href={`/webforms/${form.slug}`}>
+                          /webforms/{form.slug}
+                        </a>
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-4 text-[13px]">
+                        <PublishedFormRowActions
+                          kind="webform"
+                          id={form.id}
+                          name={form.name}
+                          canManage={session.role !== "viewer"}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </AdminShell>

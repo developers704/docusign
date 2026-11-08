@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import DeleteAgreementButton from "@/components/DeleteAgreementButton";
+import AgreementRowMenu from "@/components/AgreementRowMenu";
 import { Icon } from "@/components/Icons";
 import type { EnvelopeRecord } from "@/lib/types";
 
@@ -263,7 +263,15 @@ export default function AgreementsWorkspace({
                         Open
                       </Link>
                     )}
-                    {canDelete && <DeleteAgreementButton envelopeId={envelope.id} title={envelope.title} />}
+                    {envelope.status === "completed" ? (
+                      <a
+                        href={`/api/admin/envelopes/${envelope.id}/download?type=signed`}
+                        className="rounded-[2px] border border-[#c6c6c6] bg-white px-3 py-2 text-[12px] font-semibold text-[#21004c]"
+                      >
+                        Download
+                      </a>
+                    ) : null}
+                    <AgreementRowMenu envelope={envelope} canDelete={canDelete} canCreate={canCreate} />
                   </div>
                 </div>
               );
@@ -323,7 +331,7 @@ export default function AgreementsWorkspace({
                             : "Drafts"}
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex flex-wrap items-center justify-end gap-2">
+                        <div className="flex flex-nowrap items-center justify-end gap-2">
                           {["draft", "scheduled"].includes(envelope.status) ? (
                             <>
                               <Link
@@ -344,10 +352,18 @@ export default function AgreementsWorkspace({
                               href={`/envelopes/${envelope.id}`}
                               className="rounded-[2px] border border-[#c6c6c6] bg-white px-3 py-1.5 text-[12px] font-semibold text-[#000] hover:bg-[#f5f5f5]"
                             >
-                              {envelope.status === "completed" ? "Open" : "Open"}
+                              Open
                             </Link>
                           )}
-                          {canDelete && <DeleteAgreementButton envelopeId={envelope.id} title={envelope.title} />}
+                          {envelope.status === "completed" ? (
+                            <a
+                              href={`/api/admin/envelopes/${envelope.id}/download?type=signed`}
+                              className="rounded-[2px] border border-[#c6c6c6] bg-white px-3 py-1.5 text-[12px] font-semibold text-[#21004c] hover:bg-[#f5f5f5]"
+                            >
+                              Download
+                            </a>
+                          ) : null}
+                          <AgreementRowMenu envelope={envelope} canDelete={canDelete} canCreate={canCreate} />
                         </div>
                       </td>
                     </tr>

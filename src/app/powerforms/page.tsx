@@ -35,7 +35,7 @@ export default async function PowerFormsPage({
 
   return (
     <AdminShell session={session} office={office}>
-      <div className="bg-white px-8 py-7 text-[#000]">
+      <div className="bg-white px-4 py-6 text-[#000] sm:px-8 sm:py-7">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h1 className="text-[28px] font-semibold tracking-[-.01em] text-[#21004c]">PowerForms</h1>
@@ -84,7 +84,13 @@ export default async function PowerFormsPage({
           </div>
         ) : null}
 
-        <PowerFormsAdminList forms={forms} templateNames={templateNames} officeNames={officeNames} appUrl={appUrl} />
+        <PowerFormsAdminList
+          forms={forms}
+          templateNames={templateNames}
+          officeNames={officeNames}
+          appUrl={appUrl}
+          canManage={session.role !== "viewer"}
+        />
       </div>
     </AdminShell>
   );
